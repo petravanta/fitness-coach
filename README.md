@@ -22,6 +22,10 @@ On a phone, use *Add to Home Screen* to open it like an app.
 - **Progressive overload.** Each exercise suggests a weight and reps from last time: add weight when you hit the top of the rep range on every set, otherwise add a rep.
 - **Progress.** Per exercise: estimated 1-rep max (or best reps or time) over time. Per movement: a *movement strength* score for squat, hinge, single-leg, horizontal and vertical push and pull, carry and core, compared with bodyweight standards. Plus weekly sets per muscle and how well you kept to your rest times.
 
+## Importing from Fitbod
+
+Under *Settings → Import from Fitbod*, pick the CSV from Fitbod's *Export workout data*. Each workout becomes a workout here (warm-up sets are skipped), exercise names are matched to the library, and you choose what any unmatched exercise becomes. Importing the same file again skips workouts that are already in.
+
 ## Your data
 
 Everything is stored in your browser (`localStorage`). Turn on **Google Drive sync** under *Settings* to keep a copy in your Drive and use it on several devices. **Export backup** downloads a JSON file you can import into any copy of the app.
