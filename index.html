@@ -4,6 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Fitness Coach</title>
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#172129" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Fitness">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
@@ -172,6 +181,37 @@ textarea{resize:vertical}
 .star[aria-pressed="true"]{color:var(--accent)}
 .needs{font-size:12px;color:var(--faint)}
 input[type=range]{width:100%;accent-color:var(--accent)}
+/* tab icons show only in the phone tab bar */
+nav.tabs svg{display:none;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+nav.tabs .short{display:none}
+button,a{touch-action:manipulation}
+/* Phone: tabs become a bottom bar within thumb reach; controls get 44px touch targets */
+@media (max-width:640px){
+  nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:25;background:var(--surface);border-top:1px solid var(--line);gap:0;justify-content:space-around;
+    padding:4px max(4px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 4px) max(4px,env(safe-area-inset-left,0px))}
+  nav.tabs button{flex:1 1 0;display:flex;flex-direction:column;align-items:center;gap:2px;border-bottom:0;border-top:3px solid transparent;padding:6px 2px 4px;font-size:11px;min-width:0}
+  nav.tabs button[aria-selected="true"]{border-top-color:var(--accent);color:var(--accent)}
+  nav.tabs svg,nav.tabs .short{display:block} nav.tabs .long{display:none}
+  .topbar{padding-block:10px}
+  main{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+  .toast{bottom:calc(env(safe-area-inset-bottom,0px) + 78px)}
+  .btn,.chip{min-height:40px} .btn.sm{min-height:36px} .star{min-width:40px;min-height:40px}
+  select,input[type=text],input[type=number]{font-size:16px;min-height:44px}
+}
+/* workout navigation */
+.exnav{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px}
+.exnav .btn{min-height:44px}
+.exnav .btn:disabled{opacity:.4;cursor:default}
+.exnav-mid{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.runlist{display:flex;flex-direction:column}
+.runrow{display:grid;grid-template-columns:32px minmax(0,1fr) auto;gap:10px;align-items:center;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:12px 4px;min-height:52px}
+.runrow .tag{font-family:var(--f-mono);font-size:12px;color:var(--faint)}
+.runrow .nm{font-weight:600}
+.runrow.cur{background:var(--accent-soft);border-radius:8px}
+.runrow .ok{color:var(--lv-conf);font-weight:600}
+.gate{max-width:560px;margin:8vh auto 0}
+.gated nav.tabs{display:none}
+
 </style>
 </head>
 <body>
@@ -184,14 +224,14 @@ input[type=range]{width:100%;accent-color:var(--accent)}
         Fitness Coach
       </div>
       <span class="save-state" id="saveState">Loading…</span>
-      <button class="btn sm" id="driveResume" data-act="driveSync" hidden>Resume Drive sync</button>
+      <button class="btn sm" id="driveResume" data-act="signin" data-drive="1" hidden>Reconnect Drive</button>
     </div>
     <nav class="tabs" role="tablist">
-      <button role="tab" data-tab="today" aria-selected="true">Today</button>
-      <button role="tab" data-tab="progress" aria-selected="false">Progress</button>
-      <button role="tab" data-tab="exercises" aria-selected="false">Exercises</button>
-      <button role="tab" data-tab="gear" aria-selected="false">Gear &amp; goals</button>
-      <button role="tab" data-tab="settings" aria-selected="false">Settings</button>
+      <button role="tab" data-tab="today" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16M8 3v4M16 3v4"/><rect x="4" y="5" width="16" height="15" rx="2"/></svg><span class="long">Today</span><span class="short">Today</span></button>
+      <button role="tab" data-tab="progress" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16"/><path d="M6 15l4-4 3 3 5-6"/></svg><span class="long">Progress</span><span class="short">Progress</span></button>
+      <button role="tab" data-tab="exercises" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10v4M21 10v4M6 7v10M18 7v10M6 12h12"/></svg><span class="long">Exercises</span><span class="short">Exercises</span></button>
+      <button role="tab" data-tab="gear" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg><span class="long">Gear &amp; goals</span><span class="short">Goals</span></button>
+      <button role="tab" data-tab="settings" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg><span class="long">Settings</span><span class="short">Settings</span></button>
     </nav>
   </div>
 </header>
@@ -312,9 +352,8 @@ function rebuildLibrary(){
 }
 
 /* ---------------- State & storage ---------------- */
-/* Google Drive sync: the same OAuth client as Skating Mentor; it works for any page on https://petravanta.github.io. Leave empty to turn Drive off. */
+/* Data lives in one file in the user's Google Drive (see the Drive store below). The OAuth client is shared by all apps on https://petravanta.github.io. */
 const GOOGLE_CLIENT_ID=/^(petravanta\.github\.io|localhost)$/.test(location.hostname)?'326863468616-4hf2conk0ks0s4qdva9tphphdo7ht7eh.apps.googleusercontent.com':'';
-const LS_KEY='fitnessCoach.v1', LS_PLAN='fitnessCoach.plan', LS_ACTIVE='fitnessCoach.active';
 const DAY=86400000, LB=2.20462;
 const uid6=()=>Math.random().toString(36).slice(2,8)+Date.now().toString(36).slice(-4);
 function defaultProfile(){return{
@@ -325,116 +364,177 @@ function defaultProfile(){return{
   ctx:{minutes:60,focus:'auto',sport:'all'}, examples:true
 };}
 function fixProfile(p){const d=defaultProfile();return Object.assign(d,p,{rest:Object.assign(d.rest,p.rest||{}),ctx:Object.assign(d.ctx,p.ctx||{})})}
-let state={profile:defaultProfile(),sessions:[],deleted:[]};
-function lsGet(k){try{return JSON.parse(localStorage.getItem(k)||'null')}catch(e){return null}}
-function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
-const local=lsGet(LS_KEY); if(local&&local.profile){state={profile:fixProfile(local.profile),sessions:Array.isArray(local.sessions)?local.sessions:[],deleted:local.deleted||[]}}
+let state={profile:defaultProfile(),sessions:[],deleted:[]}, active=null, planCache=null;
+// mode: 'loading' | 'signin' | 'ready' (saving to Drive) | 'demo' (nothing saved) | 'error'
+let mode='loading';
 rebuildLibrary();
 function setSaveState(t){document.getElementById('saveState').textContent=t}
-function saveLocal(){if(!lsSet(LS_KEY,state))toast('This browser is out of space. Export a backup.');driveSoon()}
-function saveProfile(){state.profile.updatedAt=new Date().toISOString();saveLocal()}
+function persist(){state.active=active; state.plan=planCache; if(mode==='ready') store.save({profile:state.profile,sessions:state.sessions,deleted:state.deleted,active,plan:planCache})}
+function saveProfile(){state.profile.updatedAt=new Date().toISOString();persist()}
 function touchProfile(){state.profile.examples=false;saveProfile()}
-
-/* ---------------- Google Drive sync ---------------- */
-// Uses the drive.file scope, so the app can only see the files it creates.
-const DRIVE_FILE='Fitness Coach data.json', DAPI='https://www.googleapis.com';
-const Drive={token:null,exp:0,fileId:lsGet('fc.driveFile'),on:!!lsGet('fc.driveOn'),busy:false,last:null,timer:null,err:null,lastAsk:0};
-(()=>{const t=lsGet('fc.driveTok'); if(Drive.on&&t&&t.exp>Date.now()){Drive.token=t.token;Drive.exp=t.exp}})();
-const driveConfigured=()=>!!GOOGLE_CLIENT_ID;
-const driveLive=()=>!!Drive.token&&Date.now()<Drive.exp;
-function loadGis(){return new Promise((res,rej)=>{
-  if(window.google&&google.accounts&&google.accounts.oauth2) return res();
-  const sc=document.createElement('script'); sc.src='https://accounts.google.com/gsi/client'; sc.onload=res; sc.onerror=()=>rej(new Error('gis')); document.head.appendChild(sc)})}
-function driveToken(){return new Promise(async(res,rej)=>{
-  try{await loadGis()}catch(e){return rej(e)}
-  const c=google.accounts.oauth2.initTokenClient({client_id:GOOGLE_CLIENT_ID,scope:'https://www.googleapis.com/auth/drive.file',
-    callback:r=>{if(r.error) return rej(r); Drive.token=r.access_token; Drive.exp=Date.now()+(Number(r.expires_in||3600)-60)*1000; lsSet('fc.driveTok',{token:Drive.token,exp:Drive.exp}); res()},
-    error_callback:rej});
-  c.requestAccessToken({prompt:Drive.on?'':'consent'});
-})}
-async function dfetch(path,opt={}){
-  if(!driveLive()) throw {code:'expired'};
-  const r=await fetch(DAPI+path,{...opt,headers:{...(opt.headers||{}),Authorization:'Bearer '+Drive.token}});
-  if(r.status===401){Drive.token=null; lsSet('fc.driveTok',null); throw {code:'expired'}}
-  if(!r.ok) throw {code:'http',status:r.status};
-  return r;
+function useData(d){state={profile:fixProfile(d.profile||{}),sessions:Array.isArray(d.sessions)?d.sessions:[],deleted:d.deleted||[]}; active=d.active||null; planCache=d.plan||null; rebuildLibrary()}
+// Combine two copies (Drive and unsaved changes, or two devices): every workout from both minus deletions, the more recently edited settings, the more recently touched workout in progress
+function mergeData(a,b){
+  const del=new Set([...(a.deleted||[]),...(b.deleted||[])]);
+  const by=new Map(); [...(b.sessions||[]),...(a.sessions||[])].forEach(s=>{if(s&&s.id&&!del.has(s.id))by.set(s.id,s)});
+  const pa=a.profile, pb=b.profile, profile=pa&&(!pb||(pa.updatedAt||'')>=(pb.updatedAt||''))?pa:pb||{};
+  let act=[a.active,b.active].filter(Boolean).sort((x,y)=>(y.upd||0)-(x.upd||0))[0]||null;
+  if(act&&by.has(act.id)) act=null;
+  return {profile:fixProfile(profile),sessions:[...by.values()].sort((x,y)=>x.ts<y.ts?-1:1),deleted:[...del],active:act,plan:a.plan||b.plan||null};
 }
-async function driveFind(){
-  if(Drive.fileId){
-    try{const j=await (await dfetch(`/drive/v3/files/${Drive.fileId}?fields=id,trashed`)).json(); if(!j.trashed) return Drive.fileId}
-    catch(e){if(e.code==='expired') throw e}
+/* ===== Drive store: petravanta's apps =====
+   Canonical copy: https://github.com/petravanta/general/blob/main/shared/drive-store.js (see STANDARDS.md, "Data lives in Google Drive").
+   Keeps an app's data in one JSON file in the user's Google Drive (drive.file scope: the app only sees files it created).
+   The browser keeps only sign-in details, and a copy of changes that haven't reached Drive yet (for example while offline);
+   that copy is deleted as soon as Drive has it. */
+function DriveStore(o){
+  // o: {clientId, file:'App data.json', app:'app-id', key:'localStorage prefix', empty:()=>data, merge:(remote,local)=>data, onChange:()=>{}}
+  const API='https://www.googleapis.com', SCOPE='https://www.googleapis.com/auth/drive.file';
+  const get=k=>{try{return JSON.parse(localStorage.getItem(o.key+'.'+k)||'null')}catch(e){return null}};
+  const put=(k,v)=>{try{v==null?localStorage.removeItem(o.key+'.'+k):localStorage.setItem(o.key+'.'+k,JSON.stringify(v));return true}catch(e){return false}};
+  const S={token:null,exp:0,fileId:get('file'),known:!!get('known'),data:null,busy:false,err:null,last:null,timer:null,ask:0};
+  const t=get('token'); if(t&&t.exp>Date.now()){S.token=t.token;S.exp=t.exp}
+  const live=()=>!!S.token&&Date.now()<S.exp;
+  const note=()=>{try{o.onChange&&o.onChange()}catch(e){}};
+  function gis(){return new Promise((res,rej)=>{
+    if(window.google&&google.accounts&&google.accounts.oauth2) return res();
+    const s=document.createElement('script'); s.src='https://accounts.google.com/gsi/client'; s.onload=res; s.onerror=()=>rej({code:'offline'}); document.head.appendChild(s)})}
+  // Asking for a token opens Google's window, so call this from a tap. For an account that already agreed, the window closes by itself.
+  function signIn(){return new Promise(async(res,rej)=>{
+    try{await gis()}catch(e){return rej(e)}
+    google.accounts.oauth2.initTokenClient({client_id:o.clientId,scope:SCOPE,error_callback:rej,
+      callback:r=>{if(r.error) return rej(r); S.token=r.access_token; S.exp=Date.now()+(Number(r.expires_in||3600)-60)*1000; put('token',{token:S.token,exp:S.exp}); S.known=true; put('known',true); res()}
+    }).requestAccessToken({prompt:S.known?'':'consent'});
+  })}
+  async function call(path,opt={}){
+    if(!live()) throw {code:'expired'};
+    let r; try{r=await fetch(API+path,{...opt,headers:{...(opt.headers||{}),Authorization:'Bearer '+S.token}})}catch(e){throw {code:'offline'}}
+    if(r.status===401){S.token=null; put('token',null); throw {code:'expired'}}
+    if(!r.ok) throw {code:'http',status:r.status};
+    return r;
   }
-  const q=encodeURIComponent(`name='${DRIVE_FILE}' and trashed=false`);
-  const j=await (await dfetch(`/drive/v3/files?q=${q}&orderBy=modifiedTime desc&fields=files(id)`)).json();
-  Drive.fileId=j.files&&j.files[0]?j.files[0].id:null; lsSet('fc.driveFile',Drive.fileId);
-  return Drive.fileId;
+  async function find(){
+    if(S.fileId){try{const j=await (await call(`/drive/v3/files/${S.fileId}?fields=id,trashed`)).json(); if(!j.trashed) return S.fileId}catch(e){if(e.code!=='http') throw e}}
+    const q=encodeURIComponent(`name='${o.file.replace(/'/g,"\\'")}' and trashed=false`);
+    const j=await (await call(`/drive/v3/files?q=${q}&orderBy=modifiedTime desc&fields=files(id)`)).json();
+    S.fileId=j.files&&j.files[0]?j.files[0].id:null; put('file',S.fileId); return S.fileId;
+  }
+  async function read(){const id=await find(); return id?(await call(`/drive/v3/files/${id}?alt=media`)).json():null}
+  async function write(data){
+    const body=JSON.stringify({app:o.app,saved:new Date().toISOString(),...data}), id=await find();
+    if(id){await call(`/upload/drive/v3/files/${id}?uploadType=media`,{method:'PATCH',headers:{'Content-Type':'application/json'},body});return}
+    const b='b'+Math.random().toString(36).slice(2), meta=JSON.stringify({name:o.file,mimeType:'application/json'});
+    const j=await (await call('/upload/drive/v3/files?uploadType=multipart&fields=id',{method:'POST',headers:{'Content-Type':'multipart/related; boundary='+b},
+      body:`--${b}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${meta}\r\n--${b}\r\nContent-Type: application/json\r\n\r\n${body}\r\n--${b}--`})).json();
+    S.fileId=j.id; put('file',j.id);
+  }
+  async function flush(){
+    clearTimeout(S.timer); if(!S.data||S.busy) return;
+    if(!live()){note();return}
+    S.busy=true; note();
+    try{await write(S.data); S.err=null; S.last=new Date(); put('pending',null)}
+    catch(e){S.err=e.code==='expired'?null:e.code==='offline'?'offline':'error'}
+    finally{S.busy=false; note()}
+  }
+  // Load: Drive's copy, merged with any changes this browser hadn't saved yet. Creates the file on first use.
+  async function load(interactive){
+    if(!live()){ if(!interactive) throw {code:'expired'}; await signIn() }
+    S.busy=true; note();
+    const pending=get('pending');
+    try{
+      const remote=await read();
+      let data=remote?o.merge(remote,o.empty()):o.empty();
+      if(pending) data=o.merge(pending,data);
+      S.data=data; S.err=null; S.last=new Date();
+      if(!remote||pending){await write(data); put('pending',null)}
+      return data;
+    }catch(e){
+      // offline with unsaved changes: carry on from them; they go to Drive once the connection is back
+      if(e.code==='offline'&&pending){S.data=o.merge(pending,o.empty()); S.err='offline'; return S.data}
+      S.err=e.code==='offline'?'offline':e.code==='expired'?null:'error'; throw e;
+    }finally{S.busy=false; note()}
+  }
+  // Pick up changes made on another device
+  async function refresh(){
+    if(!live()||S.busy||!S.data) return false;
+    try{const r=await read(); if(!r) return false; const before=JSON.stringify(S.data); S.data=o.merge(r,S.data); return JSON.stringify(S.data)!==before}
+    catch(e){return false}
+  }
+  function save(data){S.data=data; if(!put('pending',data)) {/* storage full or blocked: Drive still gets it */} clearTimeout(S.timer); S.timer=setTimeout(flush,1500); note()}
+  function signOut(){
+    if(S.token&&window.google&&google.accounts&&google.accounts.oauth2) google.accounts.oauth2.revoke(S.token,()=>{});
+    S.token=null; S.data=null; ['token','known','file','pending'].forEach(k=>put(k,null)); S.known=false; note();
+  }
+  // Tokens last an hour. Renew on a tap when it is close to running out or gone, then save anything waiting.
+  document.addEventListener('click',e=>{
+    if(!o.clientId||!S.known||e.target.closest('[data-drive]')) return;
+    if(S.exp-Date.now()>10*60000||Date.now()-S.ask<60000) return;
+    S.ask=Date.now(); signIn().then(flush).catch(()=>note());
+  },true);
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden') flush()});
+  window.addEventListener('online',()=>flush());
+  function status(){
+    if(!S.data) return '';
+    if(S.busy) return 'Saving to Google Drive…';
+    const waiting=!!get('pending');
+    if(S.err==='offline') return 'Offline · changes save to Drive when you’re back online';
+    if(S.err) return 'Couldn’t reach Google Drive · will retry';
+    if(!live()) return waiting?'Tap anywhere to reconnect Google Drive':'Google Drive sign-in expired';
+    if(waiting) return 'Saving to Google Drive…';
+    return 'Saved to Google Drive'+(S.last?' · '+S.last.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):'');
+  }
+  return {load,save,flush,refresh,signIn,signOut,status,live,
+    get data(){return S.data}, get known(){return S.known}, get configured(){return !!o.clientId}, get file(){return o.file},
+    get needsTap(){return !!S.data&&!live()}};
 }
-async function driveRead(){const id=await driveFind(); return id?(await dfetch(`/drive/v3/files/${id}?alt=media`)).json():null}
-async function driveWrite(){
-  const body=JSON.stringify({app:'fitness-coach',saved:new Date().toISOString(),profile:state.profile,sessions:state.sessions,deleted:state.deleted});
-  const id=await driveFind();
-  if(id){await dfetch(`/upload/drive/v3/files/${id}?uploadType=media`,{method:'PATCH',headers:{'Content-Type':'application/json'},body});return}
-  const b='fc'+uid6(), meta=JSON.stringify({name:DRIVE_FILE,mimeType:'application/json'});
-  const multi=`--${b}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${meta}\r\n--${b}\r\nContent-Type: application/json\r\n\r\n${body}\r\n--${b}--`;
-  const j=await (await dfetch('/upload/drive/v3/files?uploadType=multipart&fields=id',{method:'POST',headers:{'Content-Type':'multipart/related; boundary='+b},body:multi})).json();
-  Drive.fileId=j.id; lsSet('fc.driveFile',j.id);
-}
-// Combine Drive and this browser: every workout from both (minus deletions), and the more recently edited profile
-function mergeRemote(r){
-  if(!r||!r.profile) return false;
-  const del=new Set([...(state.deleted||[]),...(r.deleted||[])]);
-  const byId=new Map(); [...(r.sessions||[]),...state.sessions].forEach(s=>{if(s&&s.id&&!del.has(s.id))byId.set(s.id,s)});
-  const before=JSON.stringify([state.profile.updatedAt,state.sessions.length]);
-  if((r.profile.updatedAt||'')>(state.profile.updatedAt||'')) state.profile=fixProfile(r.profile);
-  state.sessions=[...byId.values()].sort((a,b)=>a.ts<b.ts?-1:1); state.deleted=[...del];
-  lsSet(LS_KEY,state); rebuildLibrary();
-  return JSON.stringify([state.profile.updatedAt,state.sessions.length])!==before;
-}
-function driveStatus(){
-  if(!driveConfigured()||!Drive.on) return null;
-  if(Drive.busy) return 'Syncing with Google Drive…';
-  if(Drive.err) return Drive.err;
-  if(!driveLive()) return 'Google Drive paused';
-  return 'Synced to Google Drive'+(Drive.last?' · '+Drive.last.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}):'');
-}
-function showDriveStatus(){const t=driveStatus(); setSaveState(t||'Saved in this browser'); const b=document.getElementById('driveResume'); if(b) b.hidden=!(driveConfigured()&&Drive.on&&!driveLive()&&!Drive.busy)}
-async function driveSync(interactive){
-  if(Drive.busy) return;
-  try{
-    if(!driveLive()){ if(!interactive){showDriveStatus();return} await driveToken() }
-    Drive.busy=true; Drive.err=null; showDriveStatus();
-    const changed=mergeRemote(await driveRead());
-    await driveWrite();
-    Drive.on=true; lsSet('fc.driveOn',true); Drive.last=new Date();
-    if(changed){planCache=null; render()}
-  }catch(e){
-    if(e&&e.code!=='expired') Drive.err=(e.type==='popup_closed'||e.error==='access_denied')?null:'Couldn’t reach Google Drive';
-    if(interactive&&Drive.err) toast('Couldn’t connect to Google Drive. Your data is still saved in this browser.');
-  }finally{Drive.busy=false; showDriveStatus(); if(tab==='settings') render()}
-}
-function driveSoon(){
-  if(!driveConfigured()||!Drive.on) return;
-  clearTimeout(Drive.timer);
-  Drive.timer=setTimeout(async()=>{
-    if(!driveLive()){showDriveStatus();return}
-    try{Drive.busy=true;showDriveStatus();await driveWrite();Drive.last=new Date();Drive.err=null}
-    catch(e){if(e.code!=='expired')Drive.err='Couldn’t reach Google Drive'}
-    finally{Drive.busy=false;showDriveStatus()}
-  },3000);
-}
-function driveDisconnect(){
-  if(Drive.token&&window.google&&google.accounts&&google.accounts.oauth2) google.accounts.oauth2.revoke(Drive.token,()=>{});
-  Drive.token=null; Drive.on=false; Drive.err=null; lsSet('fc.driveOn',false); lsSet('fc.driveTok',null); showDriveStatus(); render();
+/* ===== end Drive store ===== */
+
+const store=DriveStore({clientId:GOOGLE_CLIENT_ID,file:'Fitness Coach data.json',app:'fitness-coach',key:'fc',
+  empty:()=>({profile:null,sessions:[],deleted:[],active:null,plan:null}),merge:mergeData,onChange:()=>showDriveStatus()});
+function showDriveStatus(){
+  const b=document.getElementById('driveResume');
+  setSaveState(mode==='ready'?store.status():mode==='demo'?'Preview · not saved':'');
+  if(b) b.hidden=!(mode==='ready'&&store.needsTap);
 }
 function drivePanel(){
-  if(!driveConfigured()) return `<p class="small muted">Google Drive sync works in the copy of the app at petravanta.github.io/fitness-coach. Here your data stays in this browser.</p>`;
-  if(!Drive.on) return `<p class="small">Keep your workouts in your own Google Drive and pick them up on any device. The app can only see the file it creates there.</p>
-    <div class="row"><button class="btn sm primary" data-act="driveConnect">Connect Google Drive</button></div>`;
-  return `<p class="small">${esc(driveStatus()||'')}. Changes save to <b>${esc(DRIVE_FILE)}</b> in your Drive a few seconds after you make them.</p>
-    <div class="row">${driveLive()?`<button class="btn sm" data-act="driveSync">Sync now</button>`:`<button class="btn sm primary" data-act="driveSync">Resume sync</button>`}
-    <button class="btn sm ghost" data-act="driveOff">Disconnect</button></div>`;
+  if(!store.configured) return `<p class="small muted">This preview doesn’t save anything. Open the app at petravanta.github.io/fitness-coach to keep your data in Google Drive.</p>`;
+  if(mode!=='ready') return `<p class="small">Fitness Coach keeps your workouts and settings in your own Google Drive, so they follow you to any device. Right now nothing is being saved.</p>
+    <div class="row"><button class="btn sm primary" data-act="signin" data-drive="1">Connect Google Drive</button></div>`;
+  return `<p class="small">${esc(store.status())}. Everything is saved to <b>${esc(store.file)}</b> in your Drive a moment after each change. The app can only see files it created there.</p>
+    <div class="row"><button class="btn sm" data-act="driveSave" data-drive="1">Save now</button>
+    ${pendingDelete==='SIGNOUT'?`<button class="btn sm danger" data-act="signOut" data-drive="1">Sign out</button><button class="btn sm ghost" data-delcancel="1">Cancel</button>`:`<button class="btn sm ghost" data-delask="SIGNOUT">Sign out of Google Drive</button>`}</div>`;
 }
-
+// Earlier versions kept data in this browser; move it into Drive once and remove it here
+function migrateLegacy(){
+  let old=null; try{old=JSON.parse(localStorage.getItem('fitnessCoach.v1')||'null')}catch(e){}
+  if(old&&old.profile){
+    let act=null; try{act=JSON.parse(localStorage.getItem('fitnessCoach.active')||'null')}catch(e){}
+    useData(mergeData({profile:state.profile,sessions:state.sessions,deleted:state.deleted,active,plan:planCache},{...old,active:act}));
+    persist(); toast('Moved your data from this browser into Google Drive');
+  }
+  ['fitnessCoach.v1','fitnessCoach.plan','fitnessCoach.active','fc.driveFile','fc.driveOn','fc.driveTok'].forEach(k=>{try{localStorage.removeItem(k)}catch(e){}});
+}
+async function boot(interactive){
+  if(!store.configured){mode='demo';render();return}
+  if(!store.live()&&!interactive){mode='signin';render();return}
+  mode='loading'; render();
+  try{
+    useData(await store.load(interactive)); mode='ready'; migrateLegacy();
+    render(); if(active) keepAwake(true);
+  }catch(e){
+    mode=e&&(e.code==='expired'||e.type==='popup_closed'||e.type==='popup_failed_to_open'||e.error)?'signin':'error'; render();
+  }
+}
+function viewGate(){
+  if(mode==='loading') return `<div class="gate panel"><p class="muted">Loading your training from Google Drive…</p></div>`;
+  if(mode==='error') return `<div class="gate panel stack"><h2>Couldn’t reach Google Drive</h2><p class="muted">Check your connection and try again.</p><div class="row"><button class="btn primary" data-act="signin" data-drive="1">Try again</button></div></div>`;
+  return `<div class="gate panel stack">
+    <h2>${store.known?'Reconnect Google Drive':'Your training lives in your Google Drive'}</h2>
+    <p>Fitness Coach saves your workouts, settings and progress to one file in your own Google Drive, so you can pick up on any device. It can only see the file it creates.</p>
+    ${store.known?'<p class="small muted">Google sign-ins last about an hour, so the app asks again when you come back after a while.</p>':''}
+    <div class="row"><button class="btn primary big" data-act="signin" data-drive="1">${store.known?'Reconnect':'Connect Google Drive'}</button>
+    <button class="btn ghost" data-act="demo">Look around without saving</button></div></div>`;
+}
 /* ---------------- Units & numbers ---------------- */
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const U=()=>state.profile.units;
@@ -617,15 +717,14 @@ function pickQ(slot,qual,role,ctx){
   const ranked=list.map(x=>({x,s:scoreEx(x,role,ctx)})).sort((a,b)=>b.s-a.s).map(o=>o.x.id);
   ctx.used.add(ranked[0]); return {ex:ranked[0],alts:ranked.slice(1,8)};
 }
-let planCache=lsGet(LS_PLAN);
 function ctxKey(){const p=state.profile;return JSON.stringify([new Date().toDateString(),p.ctx,p.equipment,p.customEq,p.favorites,p.sports,p.muscles,p.balance,p.rest,p.units,state.sessions.length,(p.customEx||[]).length])}
 function getPlan(){
   const key=ctxKey();
   if(planCache&&planCache.key===key&&planCache.blocks&&planCache.blocks.every(b=>b.items.every(it=>BYID[it.ex]))) return planCache;
   const seed=planCache&&planCache.seed||Math.floor(Math.random()*1e6);
-  planCache={key,...buildPlan(seed)}; lsSet(LS_PLAN,planCache); return planCache;
+  planCache={key,...buildPlan(seed)}; persist(); return planCache;
 }
-function reshuffle(){const seed=Math.floor(Math.random()*1e6);planCache={key:ctxKey(),...buildPlan(seed)};lsSet(LS_PLAN,planCache);render()}
+function reshuffle(){const seed=Math.floor(Math.random()*1e6);planCache={key:ctxKey(),...buildPlan(seed)};persist();render()}
 function swapIn(plan,bi,ii){
   const it=plan.blocks[bi].items[ii], used=new Set(plan.blocks.flatMap(b=>b.items.map(i=>i.ex))), h=has();
   const next=(it.alts||[]).find(id=>BYID[id]&&!used.has(id)&&avail(BYID[id],h));
@@ -655,8 +754,8 @@ function doseTxt(x,d,rest){
 }
 
 /* ---------------- Workout runner ---------------- */
-let active=lsGet(LS_ACTIVE), lastSummary=null;
-function saveActive(){lsSet(LS_ACTIVE,active)}
+let lastSummary=null;
+function saveActive(){if(active) active.upd=Date.now(); persist()}
 function buildSteps(plan){
   const steps=[];
   plan.blocks.forEach((b,bi)=>{
@@ -673,6 +772,19 @@ function startWorkout(){
   active={id:uid6(),started:Date.now(),focus:plan.focus,est:plan.est,plan,steps:buildSteps(plan),k:0,phase:'set',log:{},rests:[],draft:null};
   initDraft(); saveActive(); keepAwake(true); audio(); render(); window.scrollTo(0,0);
 }
+// Moving around the workout: steps can be done in any order; "open" steps are neither logged nor skipped
+const isOpen=j=>!active.log[j]&&!active.steps[j].skip;
+function nextOpen(from){const n=active.steps.length;for(let j=from;j<n;j++)if(isOpen(j))return j;for(let j=0;j<Math.min(from,n);j++)if(isOpen(j))return j;return -1}
+function exList(){const m=new Map();active.steps.forEach((s,j)=>{const key=s.b+':'+s.i;if(!m.has(key))m.set(key,{b:s.b,i:s.i,steps:[]});m.get(key).steps.push(j)});return [...m.values()]}
+function exTag(b,i){const bl=active.plan.blocks[b], warm=active.plan.blocks[0].role==='warm';return bl.role==='warm'?'W'+(i+1):String.fromCharCode(65+b-(warm?1:0))+(bl.items.length>1?i+1:'')}
+function goExercise(b,i){
+  const js=exList().find(e=>e.b===b&&e.i===i).steps; js.forEach(j=>delete active.steps[j].skip);
+  let k=js.find(j=>!active.log[j]); if(k==null) k=js[js.length-1];
+  active.k=k; active.phase='set'; active.rest=null; initDraft();
+  const l=active.log[k]; if(l) active.draft={w:l.w,r:l.r,t:l.t};
+  selected=null; saveActive(); render(); window.scrollTo(0,0);
+}
+function stepExercise(dir){const L=exList(), st=active.steps[active.k]; if(!st) return; const t=L[L.findIndex(e=>e.b===st.b&&e.i===st.i)+dir]; if(t) goExercise(t.b,t.i)}
 function curItem(k=active.k){const st=active.steps[k]; if(!st) return null; const b=active.plan.blocks[st.b]; return {st,b,it:b.items[st.i],x:BYID[b.items[st.i].ex]}}
 function loggedFor(ex){return Object.keys(active.log).map(Number).sort((a,b)=>a-b).map(k=>active.log[k]).filter(l=>l.ex===ex)}
 function initDraft(){
@@ -685,25 +797,26 @@ function doneSet(){
   const c=curItem(); if(!c) return; const d=active.draft||{};
   let t=d.t; if(active.work){t=Math.round((Date.now()-active.work)/1000)}
   active.log[active.k]={ex:c.it.ex,w:d.w==null?null:+d.w,r:d.r==null?null:+d.r,t:t==null?null:+t,ts:Date.now()};
-  const rest=c.st.rest; active.k++;
-  if(rest>0&&active.k<active.steps.length){active.phase='rest';active.rest={start:Date.now(),plan:rest,move:!!c.st.move,beeped:false,warned:false}}
-  else active.phase=active.k<active.steps.length?'set':'done';
+  const rest=c.st.rest, nk=nextOpen(active.k+1);
+  if(nk<0){active.phase='done'}
+  else{active.k=nk; if(rest>0){active.phase='rest';active.rest={start:Date.now(),plan:rest,move:!!c.st.move,beeped:false,warned:false}} else active.phase='set'}
   initDraft(); saveActive(); render(); window.scrollTo(0,0);
 }
 function startSet(){
-  const r=active.rest; if(r&&!r.move) active.rests.push({p:r.plan,a:Math.round((Date.now()-r.start)/1000)});
+  const r=active.rest; if(r&&!r.move) active.rests.push({p:r.plan,a:Math.round((Date.now()-r.start)/1000),ts:Date.now()});
   active.phase='set'; active.rest=null; saveActive(); render();
 }
+// Undo the most recently logged set, wherever it was
 function undoSet(){
-  if(active.k===0) return;
-  if(active.phase==='set'&&active.rests.length&&active.steps[active.k-1].rest&&!active.steps[active.k-1].move) active.rests.pop();
-  active.k--; const l=active.log[active.k]; delete active.log[active.k];
-  active.phase='set'; active.rest=null; active.draft=l?{w:l.w,r:l.r,t:l.t}:null; if(!l) initDraft(); saveActive(); render();
+  const ks=Object.keys(active.log).map(Number); if(!ks.length) return;
+  const k=ks.reduce((a,b)=>active.log[a].ts>active.log[b].ts?a:b), l=active.log[k]; delete active.log[k];
+  active.rests=active.rests.filter(r=>!r.ts||r.ts<l.ts);
+  active.k=k; active.phase='set'; active.rest=null; active.draft={w:l.w,r:l.r,t:l.t}; active.work=null; saveActive(); render();
 }
 function skipExercise(){
   const c=curItem(); if(!c) return;
-  active.steps=active.steps.filter((s,j)=>j<active.k||!(s.b===c.st.b&&s.i===c.st.i));
-  if(active.k>=active.steps.length) active.phase='done'; else {active.phase='set'; initDraft()}
+  active.steps.forEach((s,j)=>{if(s.b===c.st.b&&s.i===c.st.i&&!active.log[j]) s.skip=true});
+  const nk=nextOpen(active.k); if(nk<0) active.phase='done'; else {active.k=nk; active.phase='set'; active.rest=null; initDraft()}
   saveActive(); render();
 }
 function finishWorkout(save){
@@ -715,13 +828,13 @@ function finishWorkout(save){
       const before={}; entries.forEach(e=>{const h=exHistory(e.ex); before[e.ex]=h.length?Math.max(...h.map(x=>x.v)):null});
       const ses={id:active.id,ts:new Date(active.started).toISOString(),end:new Date().toISOString(),focus:active.focus,entries,
         rest:{n:active.rests.length,ok:active.rests.filter(r=>r.a-r.p<=15).length,over:active.rests.reduce((t,r)=>t+Math.max(0,r.a-r.p),0)}};
-      state.sessions.push(ses); saveLocal();
+      state.sessions.push(ses);
       const prs=entries.filter(e=>{const x=BYID[e.ex]; if(!x||before[e.ex]==null) return false; return Math.max(...e.sets.map(s=>metric(x,s).v))>before[e.ex]+.01}).map(e=>BYID[e.ex].n);
       const vol=entries.reduce((t,e)=>t+e.sets.reduce((u,s)=>u+(s.w||0)*(s.r||0),0),0);
       lastSummary={mins:Math.round((Date.now()-active.started)/60000),sets:entries.reduce((t,e)=>t+e.sets.length,0),vol,rest:ses.rest,prs};
     }
   }
-  active=null; lsSet(LS_ACTIVE,null); keepAwake(false); planCache=null; pendingDelete=null; render(); window.scrollTo(0,0);
+  active=null; planCache=null; persist(); keepAwake(false); pendingDelete=null; render(); window.scrollTo(0,0);
 }
 // Sound, vibration and screen wake for the rest timer
 let AC=null;
@@ -761,6 +874,9 @@ try{const t=sessionStorage.getItem('fc.tab');if(t)tab=t}catch(e){}
 function render(){
   document.querySelectorAll('nav.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===tab?'true':'false'));
   const m=document.getElementById('main');
+  showDriveStatus();
+  document.body.classList.toggle('gated',mode==='loading'||mode==='signin'||mode==='error');
+  if(mode==='loading'||mode==='signin'||mode==='error'){m.innerHTML=viewGate();document.getElementById('drawerHost').innerHTML='';return}
   m.innerHTML=tab==='today'?viewToday():tab==='progress'?viewProgress():tab==='exercises'?viewExercises():tab==='gear'?viewGear():viewSettings();
   renderDrawer(); tick(); wireChart();
 }
@@ -785,6 +901,7 @@ function viewToday(){
           ${sg&&(sg.w!=null||sg.note)?`<span class="sug">${sg.w!=null&&x.t==='wr'?`Try <b>${wtxt(sg.w)}</b>${sg.r?' × '+sg.r:''}. `:''}${esc(sg.note)}</span>`:''}</div>`}).join('')}</div></article>`}).join('');
   return `<div class="stack">
     ${sum}
+    ${mode==='demo'?`<div class="banner"><p>${store.configured?'You’re looking around without saving. Connect Google Drive to keep your workouts.':'This is a preview. Nothing you do here is saved.'}</p>${store.configured?'<button class="btn sm primary" data-act="signin" data-drive="1">Connect Google Drive</button>':''}</div>`:''}
     ${p.examples?`<div class="banner"><p>These are example settings. Tell the app what equipment you have, your sports and favorite exercises so plans fit you.</p><button class="btn sm primary" data-tab="gear">Set up gear &amp; goals</button></div>`:''}
     <section class="panel"><div class="ctx">
       <label class="field">Time<select data-ctx="minutes">${opt(MINUTES,c.minutes)}</select></label>
@@ -797,15 +914,19 @@ function viewToday(){
   </div>`;
 }
 function viewRun(){
-  const A=active, total=A.steps.length, doneN=Object.keys(A.log).length;
+  const A=active, total=A.steps.filter((s,j)=>!s.skip||A.log[j]).length, doneN=Object.keys(A.log).length;
+  const L=exList(), cst=A.phase!=='done'&&A.steps[A.k], ci=cst?L.findIndex(e=>e.b===cst.b&&e.i===cst.i):-1;
+  const nav=`<div class="exnav"><button class="btn" data-act="exPrev" aria-label="Previous exercise"${ci>0?'':' disabled'}>‹ Prev</button>
+    <button class="btn exnav-mid" data-act="exList">${ci>=0?`Exercise ${ci+1} of ${L.length}`:'All exercises'} <span aria-hidden="true">▾</span></button>
+    <button class="btn" data-act="exNext" aria-label="Next exercise"${ci>=0&&ci<L.length-1?'':' disabled'}>Next ›</button></div>`;
   const bar=`<div class="runbar"><span>Elapsed <b class="mono" id="elapsed">0:00</b></span><span>Plan ~${Math.round(A.est/60)} min</span><span>${doneN} of ${total} sets</span>
     <span style="margin-left:auto" class="row">${pendingDelete==='END'?`<button class="btn sm primary" data-act="endSave">Save &amp; finish</button><button class="btn sm danger" data-act="endDiscard">Discard</button><button class="btn sm ghost" data-act="endCancel">Keep going</button>`:`<button class="btn sm ghost" data-act="endAsk">End workout</button>`}</span></div>
-    <div class="meter"><i style="width:${total?doneN/total*100:0}%"></i></div>`;
+    <div class="meter"><i style="width:${total?doneN/total*100:0}%"></i></div>`+nav;
   if(A.phase==='done'||!curItem()){
     return `<div class="stack">${bar}<section class="runcard rest"><h2>All sets done</h2><p class="muted">Nice work. Save it to update your progress.</p>
-      <button class="btn primary done-set" data-act="endSave">Save workout</button>${A.k>0?`<button class="btn sm ghost" data-act="undo">Undo last set</button>`:''}</section></div>`;
+      <button class="btn primary done-set" data-act="endSave">Save workout</button>${doneN?`<button class="btn sm ghost" data-act="undo">Undo last set</button>`:''}</section></div>`;
   }
-  const c=curItem(), x=c.x, d=c.it.d, ss=c.b.items.length>1&&c.b.role!=='warm', bi=c.st.b-(A.plan.blocks[0].role==='warm'?1:0), label=`${ROLE_NAME[c.b.role]}${ss?' · superset '+String.fromCharCode(65+bi)+(c.st.i+1):''}`;
+  const c=curItem(), x=c.x, d=c.it.d, ss=c.b.items.length>1&&c.b.role!=='warm', label=`${ROLE_NAME[c.b.role]}${ss?' · superset '+exTag(c.st.b,c.st.i):''}`;
   const sg=suggest(x,d), setN=c.b.role==='warm'?'':`Set ${c.st.s+1} of ${d.sets}`;
   const target=d.secs?`${d.secs}s${x.p==='mob'?' each side':''}`:`${d.reps[0]}–${d.reps[1]} reps`;
   if(A.phase==='rest'&&A.rest){
@@ -828,7 +949,7 @@ function viewRun(){
   else if(x.t==='bw') inputs=stepper('r','Reps',dr.r,1)+(c.b.role==='warm'?'':stepper('w',`Added (${U()})`,toDisp(dr.w),wStep));
   else inputs=stepper('t','Seconds',dr.t,5)+(x.std?stepper('w',`Weight (${U()}${x.per?' per hand':''})`,toDisp(dr.w),wStep):'')+
     `<div class="stepper"><span class="field">Timer</span><div class="ctl">${A.work?`<b class="mono" style="font-size:28px" id="workClock"></b>`:`<button class="btn" style="width:auto;height:44px;padding:0 16px;font-size:15px" data-act="workStart">Start ${d.secs}s</button>`}</div></div>`;
-  const upcoming=[]; for(let j=A.k+1;j<A.steps.length&&upcoming.length<3;j++){const n=curItem(j).x.n; if(n!==x.n&&!upcoming.includes(n)) upcoming.push(n)}
+  const upcoming=[]; for(let j=A.k+1;j<A.steps.length&&upcoming.length<3;j++){if(!isOpen(j)) continue; const n=curItem(j).x.n; if(n!==x.n&&!upcoming.includes(n)) upcoming.push(n)}
   return `<div class="stack">${bar}<section class="runcard">
     <div class="row" style="justify-content:space-between"><span class="role ${c.b.role}">${esc(label)}</span><span class="small muted">${setN}</span></div>
     <button class="big-name" data-open="${x.id}">${esc(x.n)}</button>
@@ -838,7 +959,7 @@ function viewRun(){
     ${prev.length?`<div class="setlog">${prev.map((l,i)=>`<span>Set ${i+1}: ${esc(setTxt(x,l))}</span>`).join('')}</div>`:''}
     <ul class="cues small">${x.c.map(q=>`<li>${esc(q)}</li>`).join('')}</ul>
     <button class="btn primary done-set" data-act="done">Done${c.b.role==='warm'?'':' set'}</button>
-    <div class="row"><button class="btn sm" data-act="swapRun">Swap exercise</button><button class="btn sm ghost" data-act="skipEx">Skip exercise</button>${A.k>0?`<button class="btn sm ghost" data-act="undo">Undo last set</button>`:''}</div>
+    <div class="row"><button class="btn sm" data-act="swapRun">Swap exercise</button><button class="btn sm ghost" data-act="skipEx">Skip exercise</button>${doneN?`<button class="btn sm ghost" data-act="undo">Undo last set</button>`:''}</div>
     ${upcoming.length?`<p class="upnext">Up next: ${esc(upcoming.join(' · '))}</p>`:''}
   </section></div>`;
 }
@@ -982,7 +1103,7 @@ function viewSettings(){
       ${fitbodImport?fitbodPreview():`<div class="row"><label class="btn sm" for="fitbodFile" style="display:inline-block">Choose Fitbod CSV</label><input type="file" id="fitbodFile" accept=".csv,text/csv,text/plain" hidden></div>`}
     </section>
     <section class="panel stack"><h3>Backup &amp; reset</h3>
-      <p class="small">Your data is saved in this browser${Drive.on?' and in Google Drive':''}. The backup is a plain file with your workouts and settings, and you can import it into any copy of this app.</p>
+      <p class="small">Your data lives in your Google Drive. The backup is a plain file with your workouts and settings that you can keep anywhere or import into any copy of this app.</p>
       <div class="row"><button class="btn sm" data-act="export">Export backup</button>
       <label class="btn sm" for="importFile" style="display:inline-block">Import backup</label><input type="file" id="importFile" accept="application/json,.json" hidden>
       ${pendingDelete==='ALL'?`<button class="btn sm danger" data-act="resetYes">Erase everything</button><button class="btn sm ghost" data-delcancel="1">Cancel</button>`:`<button class="btn sm ghost danger" data-act="resetAsk">Start over</button>`}</div>
@@ -994,6 +1115,15 @@ function viewSettings(){
 function renderDrawer(){
   const host=document.getElementById('drawerHost');
   if(!selected){host.innerHTML='';return}
+  if(selected==='runlist'&&active){
+    host.innerHTML=`<div class="scrim" data-close="1"></div><aside class="drawer" role="dialog" aria-label="Exercises in this workout"><button class="x" data-close="1" aria-label="Close">×</button>
+      <h2>This workout</h2><div class="runlist">${exList().map(e=>{const it=active.plan.blocks[e.b].items[e.i], x=BYID[it.ex], done=e.steps.filter(j=>active.log[j]).length,
+        skipped=e.steps.every(j=>active.steps[j].skip||active.log[j])&&e.steps.some(j=>active.steps[j].skip), cur=active.phase!=='done'&&active.steps[active.k]&&active.steps[active.k].b===e.b&&active.steps[active.k].i===e.i;
+        return `<button class="runrow${cur?' cur':''}" data-goex="${e.b}:${e.i}"><span class="tag">${exTag(e.b,e.i)}</span><span class="nm">${esc(x.n)}</span>
+          <span class="small ${done===e.steps.length?'ok':'muted'}">${skipped?'Skipped':done===e.steps.length?'Done ✓':`${done}/${e.steps.length} sets`}</span></button>`}).join('')}</div>
+      <p class="small muted">Tap an exercise to jump to it. You can come back to anything you skip.</p></aside>`;
+    return;
+  }
   if(selected==='new'){
     host.innerHTML=`<div class="scrim" data-close="1"></div><aside class="drawer" role="dialog" aria-label="Add exercise"><button class="x" data-close="1" aria-label="Close">×</button>
       <h2>Add an exercise</h2>
@@ -1162,19 +1292,14 @@ function applyFitbod(){
 /* ---------------- Events ---------------- */
 function toast(t){const h=document.getElementById('toastHost');h.innerHTML=`<div class="toast" role="status">${esc(t)}</div>`;clearTimeout(toast.t);toast.t=setTimeout(()=>h.innerHTML='',2600)}
 const toggle=(arr,v)=>{const i=arr.indexOf(v);i>=0?arr.splice(i,1):arr.push(v)};
-// Google tokens last an hour. Renew on a tap when it's close to running out.
-document.addEventListener('click',e=>{
-  if(!driveConfigured()||!Drive.on||Drive.busy||e.target.closest('[data-act^="drive"],#driveResume')) return;
-  if(Drive.exp-Date.now()>10*60000||Date.now()-Drive.lastAsk<5*60000) return;
-  Drive.lastAsk=Date.now(); driveToken().then(()=>driveSync(false)).catch(()=>showDriveStatus());
-},true);
 document.addEventListener('click',async e=>{
   const t=e.target.closest('button,[data-open],[data-close]'); if(!t) return;
   const d=t.dataset, p=state.profile;
   if(d.tab){tab=d.tab;selected=null;pendingDelete=null;try{sessionStorage.setItem('fc.tab',tab)}catch(_){};render();window.scrollTo(0,0);return}
   if(d.close){selected=null;render();return}
   if(d.open){selected=d.open;render();return}
-  if(d.swap){const [bi,ii]=d.swap.split(':').map(Number); if(swapIn(planCache,bi,ii)){lsSet(LS_PLAN,planCache);render()} return}
+  if(d.goex){const [b,i]=d.goex.split(':').map(Number); goExercise(b,i); return}
+  if(d.swap){const [bi,ii]=d.swap.split(':').map(Number); if(swapIn(planCache,bi,ii)){persist();render()} return}
   if(d.fav){toggle(p.favorites,d.fav);touchProfile();render();return}
   if(d.eq){toggle(p.equipment,d.eq);touchProfile();render();return}
   if(d.rmeq){p.customEq=p.customEq.filter(x=>x.id!==d.rmeq);touchProfile();render();return}
@@ -1186,12 +1311,19 @@ document.addEventListener('click',async e=>{
     active.draft[k]=k==='w'?fromDisp(v):v; saveActive(); const el=document.getElementById('dr-'+k); if(el) el.value=k==='w'?toDisp(active.draft.w):v; return}
   if(d.delask){pendingDelete=d.delask;render();return}
   if(d.delcancel){pendingDelete=null;render();return}
-  if(d.del){state.sessions=state.sessions.filter(s=>s.id!==d.del);state.deleted.push(d.del);pendingDelete=null;saveLocal();toast('Workout deleted');render();return}
+  if(d.del){state.sessions=state.sessions.filter(s=>s.id!==d.del);state.deleted.push(d.del);pendingDelete=null;persist();toast('Workout deleted');render();return}
   if(d.rmex){p.customEx=p.customEx.filter(c=>c.id!==d.rmex);p.favorites=p.favorites.filter(f=>f!==d.rmex);selected=null;touchProfile();rebuildLibrary();render();return}
   switch(d.act){
     case 'fbCancel': fitbodImport=null; render(); return;
     case 'fbImport': {const n=applyFitbod(); toast(`Imported ${n} workouts from Fitbod`); render(); return}
     case 'start': startWorkout(); return;
+    case 'exPrev': stepExercise(-1); return;
+    case 'exNext': stepExercise(1); return;
+    case 'exList': selected='runlist'; render(); return;
+    case 'signin': boot(true); return;
+    case 'demo': mode='demo'; render(); return;
+    case 'driveSave': store.flush(); return;
+    case 'signOut': store.signOut(); useData({}); active=null; pendingDelete=null; mode='signin'; keepAwake(false); render(); return;
     case 'shuffle': reshuffle(); return;
     case 'dismissSum': lastSummary=null; render(); return;
     case 'done': audio(); doneSet(); return;
@@ -1213,9 +1345,7 @@ document.addEventListener('click',async e=>{
       p.customEx=p.customEx||[]; p.customEx.push(c); p.favorites.push(c.id); touchProfile(); rebuildLibrary(); selected=c.id; toast('Added to your exercises and favorites'); render(); return}
     case 'sound': p.sound=!p.sound; saveProfile(); render(); if(p.sound) beep(); return;
     case 'resetAsk': pendingDelete='ALL'; render(); return;
-    case 'resetYes': state={profile:defaultProfile(),sessions:[],deleted:state.deleted.concat(state.sessions.map(s=>s.id))}; pendingDelete=null; planCache=null; saveProfile(); rebuildLibrary(); toast('Everything erased'); render(); return;
-    case 'driveConnect': case 'driveSync': driveSync(true); return;
-    case 'driveOff': driveDisconnect(); return;
+    case 'resetYes': state={profile:defaultProfile(),sessions:[],deleted:state.deleted.concat(state.sessions.map(s=>s.id))}; active=null; pendingDelete=null; planCache=null; saveProfile(); rebuildLibrary(); toast('Everything erased'); render(); return;
     case 'export': {
       const data=JSON.stringify({app:'fitness-coach',exported:new Date().toISOString(),...state},null,2);
       try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'application/json'}));a.download='fitness-coach-backup-'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();a.remove();toast('Backup downloaded')}
@@ -1246,19 +1376,19 @@ document.addEventListener('change',async e=>{
     try{const j=JSON.parse(await t.files[0].text()); if(!j.profile||!Array.isArray(j.sessions)) throw 0;
       const have=new Set(state.sessions.map(s=>s.id)), add=j.sessions.filter(s=>s&&s.id&&Array.isArray(s.entries)&&!have.has(s.id));
       state.profile=fixProfile(j.profile); state.sessions=state.sessions.concat(add).sort((a,b)=>a.ts<b.ts?-1:1);
-      saveProfile(); rebuildLibrary(); planCache=null; toast(`Imported ${add.length} workouts`); render();
+      saveProfile(); rebuildLibrary(); planCache=null; persist(); toast(`Imported ${add.length} workouts`); render();
     }catch(_){toast('That file isn’t a Fitness Coach backup.')}
   }
 });
 
-render();
-showDriveStatus();
-if(active) keepAwake(true);
-if(driveConfigured()&&Drive.on){
-  loadGis().catch(()=>{});
-  if(driveLive()) driveSync(false);
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&driveLive()&&!active) driveSync(false)});
-}
+boot(false);
+// pick up changes made on another device when the app comes back to the front
+document.addEventListener('visibilitychange',async()=>{
+  if(document.visibilityState!=='visible'||mode!=='ready') return;
+  if(active) return keepAwake(true);
+  if(await store.refresh()){useData(store.data); render()}
+});
+if('serviceWorker' in navigator&&/^(petravanta\.github\.io|localhost)$/.test(location.hostname)) navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 <script src="https://petravanta.github.io/general/shared/hub-link.js" defer></script>
 </body>
