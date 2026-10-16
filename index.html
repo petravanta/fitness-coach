@@ -306,7 +306,7 @@ E('deepsq','Deep squat hold','mob','quads glutes','-','time',{q:'mob',c:['Heels 
 ];
 let EX=LIB, BYID={};
 function rebuildLibrary(){
-  EX=LIB.concat((state.profile.customEx||[]).map(c=>Object.assign(E(c.id,c.n,c.p,(c.m&&c.m.length?c.m:['abs']).join(' '),c.eq&&c.eq.length?c.eq.join('+'):'-',c.t,{c:c.c||[]}),{custom:true})));
+  EX=LIB.concat((state.profile.customEx||[]).map(c=>Object.assign(E(c.id,c.n,c.p,(c.m&&c.m.length?c.m:['abs']).join(' '),c.eq&&c.eq.length?c.eq.join('+'):'-',c.t,{c:c.c||[],sub:c.sub}),{custom:true})));
   BYID={}; EX.forEach(x=>BYID[x.id]=x);
 }
 
@@ -754,6 +754,7 @@ function tick(){
 setInterval(tick,250);
 
 /* ---------------- Rendering ---------------- */
+let fitbodImport=null;
 let tab='today', selected=null, pendingDelete=null, exFilter='all', exShow='avail', chartEx=null;
 try{const t=sessionStorage.getItem('fc.tab');if(t)tab=t}catch(e){}
 function render(){
@@ -975,6 +976,10 @@ function viewSettings(){
       <p class="small muted">The timer beeps 10 seconds before the end and again at zero, then counts how far over you go. Keep the app open during your workout; it keeps the screen on.</p>
     </section>
     <section class="panel stack"><h3>Google Drive</h3>${drivePanel()}</section>
+    <section class="panel stack"><h3>Import from Fitbod</h3>
+      <p class="small">Bring in your Fitbod history so progress charts and weight suggestions start from what you've already done. In Fitbod, go to Log, then the settings icon, and choose <b>Export workout data</b>. Then pick the CSV file here.</p>
+      ${fitbodImport?fitbodPreview():`<div class="row"><label class="btn sm" for="fitbodFile" style="display:inline-block">Choose Fitbod CSV</label><input type="file" id="fitbodFile" accept=".csv,text/csv,text/plain" hidden></div>`}
+    </section>
     <section class="panel stack"><h3>Backup &amp; reset</h3>
       <p class="small">Your data is saved in this browser${Drive.on?' and in Google Drive':''}. The backup is a plain file with your workouts and settings, and you can import it into any copy of this app.</p>
       <div class="row"><button class="btn sm" data-act="export">Export backup</button>
@@ -1014,6 +1019,145 @@ function renderDrawer(){
   </aside>`;
 }
 
+/* ---------------- Fitbod import ---------------- */
+// Fitbod's CSV export has one row per set: Date, Exercise, Reps, Weight(kg), Duration(s), Distance(m), Incline, Resistance, isWarmup, Note, multiplier.
+// Column names are matched loosely so small format changes still import.
+const FITBOD_NAMES={
+  'back squat':'bsquat','barbell squat':'bsquat','barbell back squat':'bsquat','squat':'bsquat','front squat':'fsquat','barbell front squat':'fsquat',
+  'goblet squat':'goblet','dumbbell goblet squat':'goblet','kettlebell goblet squat':'goblet','leg press':'legpress','machine leg press':'legpress',
+  'deadlift':'dl','barbell deadlift':'dl','conventional deadlift':'dl','trap bar deadlift':'tbdl','hex bar deadlift':'tbdl',
+  'romanian deadlift':'rdl','barbell romanian deadlift':'rdl','dumbbell romanian deadlift':'rdl','stiff legged deadlift':'rdl',
+  'hip thrust':'hipthrust','barbell hip thrust':'hipthrust','dumbbell hip thrust':'hipthrust','back extension':'backext','hyperextension':'backext',
+  'nordic hamstring curl':'nordic','nordic curl':'nordic','single leg romanian deadlift':'slrdl','dumbbell single leg romanian deadlift':'slrdl',
+  'bulgarian split squat':'bss','dumbbell bulgarian split squat':'bss','split squat':'bss','dumbbell split squat':'bss',
+  'lunge':'lunge','walking lunge':'lunge','dumbbell lunge':'lunge','dumbbell walking lunge':'lunge','barbell lunge':'lunge','reverse lunge':'lunge','dumbbell reverse lunge':'lunge',
+  'step up':'stepup','dumbbell step up':'stepup','box step up':'stepup','lateral lunge':'latlunge','side lunge':'latlunge','cossack squat':'latlunge',
+  'skater squat':'skatersq','pistol squat':'pistol',
+  'bench press':'bench','barbell bench press':'bench','dumbbell bench press':'dbbench','incline dumbbell bench press':'incline','incline dumbbell press':'incline',
+  'push up':'pushup','pushup':'pushup','dip':'dip','chest dip':'dip','tricep dip':'dip','bench dip':'dip',
+  'cable crossover':'fly','cable fly':'fly','dumbbell fly':'fly','dumbbell chest fly':'fly',
+  'overhead press':'ohp','barbell shoulder press':'ohp','military press':'ohp','standing barbell shoulder press':'ohp',
+  'dumbbell shoulder press':'dbohp','seated dumbbell shoulder press':'dbohp','arnold press':'dbohp','landmine press':'lmpress',
+  'lateral raise':'latraise','dumbbell lateral raise':'latraise','cable lateral raise':'latraise','side lateral raise':'latraise',
+  'barbell row':'row','bent over barbell row':'row','bent over row':'row','dumbbell row':'dbrow','single arm dumbbell row':'dbrow','one arm dumbbell row':'dbrow',
+  'seated cable row':'cablerow','cable row':'cablerow','inverted row':'invrow','trx row':'invrow','body row':'invrow',
+  'pull up':'pullup','pullup':'pullup','wide grip pull up':'pullup','chin up':'chinup','chinup':'chinup','lat pulldown':'pulldown','cable lat pulldown':'pulldown',
+  'face pull':'facepull','cable face pull':'facepull','band pull apart':'pullapart',
+  'bicep curl':'curl','dumbbell bicep curl':'curl','dumbbell curl':'curl','barbell curl':'curl','cable bicep curl':'curl','ez bar curl':'curl',
+  'hammer curl':'hammer','dumbbell hammer curl':'hammer','tricep pushdown':'pushdown','cable tricep pushdown':'pushdown','triceps pushdown':'pushdown','cable rope tricep pushdown':'pushdown',
+  'overhead tricep extension':'ohext','dumbbell overhead tricep extension':'ohext','cable overhead tricep extension':'ohext',
+  'calf raise':'calf','standing calf raise':'calf','dumbbell calf raise':'calf','tibialis raise':'tib',
+  'farmers walk':'farmer','farmer walk':'farmer','farmers carry':'farmer','suitcase carry':'suitcase',
+  'plank':'plank','side plank':'sideplank','copenhagen plank':'copen','dead bug':'deadbug','pallof press':'pallof',
+  'hanging leg raise':'hlr','hanging knee raise':'hlr','ab wheel rollout':'abwheel','ab wheel':'abwheel','ab rollout':'abwheel',
+  'cable wood chop':'chop','cable woodchop':'chop','wood chop':'chop',
+  'box jump':'boxjump','broad jump':'broad','jump squat':'jumpsq','kettlebell swing':'swing','medicine ball slam':'slam','med ball slam':'slam',
+  'rowing':'rowint','rowing machine':'rowint','row machine':'rowint','stationary bike':'bikeint','cycling':'bikeint','assault bike':'bikeint',
+  'sled push':'sled','jump rope':'rope','burpee':'burpee'
+};
+const normName=s=>String(s||'').toLowerCase().replace(/[’'`]/g,'').replace(/\(.*?\)/g,' ').replace(/[^a-z0-9]+/g,' ').trim().split(' ').map(w=>w.length>3&&w.endsWith('s')&&!w.endsWith('ss')?w.slice(0,-1):w).join(' ');
+const NORM_LOOKUP=(()=>{const m={}; Object.entries(FITBOD_NAMES).forEach(([k,v])=>m[normName(k)]=v); return m})();
+function matchExercise(name){
+  const n=normName(name); if(NORM_LOOKUP[n]) return NORM_LOOKUP[n];
+  const lib=EX.find(x=>normName(x.n)===n); if(lib) return lib.id;
+  const custom=EX.find(x=>x.custom&&normName(x.n)===n); return custom?custom.id:null;
+}
+function guessPattern(name){
+  const n=normName(name), r=[[/stretch|foam|mobility|yoga/,'mob'],[/run|treadmill|elliptical|stair|bike|cycl|rowing|rower|ski erg|swim|walk(?!ing lunge)/,'cond'],
+    [/jump|throw|slam|swing|clean|snatch/,'power'],[/carry|farmer/,'carry'],[/calf|tibialis/,'calves'],[/leg curl|hamstring curl/,'hinge'],[/leg extension/,'squat'],
+    [/lunge|split squat|step up|single leg|pistol/,'single'],[/squat|leg press|hack/,'squat'],[/deadlift|good morning|hip thrust|glute bridge|back extension|hyperextension|pull through/,'hinge'],
+    [/curl/,'arms.bi'],[/tricep|skull|kickback/,'arms.tri'],[/pull ?up|chin ?up|pulldown|pullover/,'vpull'],[/row/,'hpull'],[/face pull|reverse fly|rear delt|pull apart|external rotation/,'shoulder'],
+    [/shoulder press|overhead|military|arnold|lateral raise|front raise|upright|shrug|handstand/,'vpush'],[/bench|chest|push ?up|fly|dip|press/,'hpush'],
+    [/plank|crunch|sit ?up|ab |abs|oblique|leg raise|knee raise|russian twist|hollow|v up|mountain climber|woodchop/,'core']];
+  for(const [re,p] of r) if(re.test(n+' ')) return p;
+  return 'core';
+}
+const PAT_MUS={squat:['quads','glutes'],hinge:['hams','glutes'],single:['quads','glutes'],hpush:['chest','arms'],vpush:['shoulders','arms'],hpull:['back','arms'],vpull:['back','arms'],
+  carry:['back','abs'],core:['abs'],power:['glutes','quads'],arms:['arms'],calves:['calves'],shoulder:['shoulders','back'],cond:['quads'],mob:['glutes']};
+function parseCsv(text){
+  text=text.replace(/^﻿/,'');
+  const first=text.split(/\r?\n/)[0]||'', delim=(first.match(/;/g)||[]).length>(first.match(/,/g)||[]).length?';':',';
+  const rows=[]; let row=[], cell='', q=false;
+  for(let i=0;i<text.length;i++){const c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){cell+='"';i++} else q=false } else cell+=c; continue }
+    if(c==='"') q=true; else if(c===delim){row.push(cell);cell=''} else if(c==='\n'||c==='\r'){ if(c==='\r'&&text[i+1]==='\n') i++; row.push(cell); rows.push(row); row=[]; cell='' } else cell+=c;
+  }
+  if(cell!==''||row.length){row.push(cell);rows.push(row)}
+  return rows.filter(r=>r.some(c=>c.trim()!==''));
+}
+function parseDate(s){
+  s=String(s||'').trim(); if(!s) return null;
+  let d=new Date(s); if(!isNaN(d)) return d;
+  const m=s.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?\s*([+-]\d{2}):?(\d{2})?$/);
+  if(m){d=new Date(`${m[1]}-${m[2]}-${m[3]}T${m[4].padStart(2,'0')}:${m[5]}:${m[6]||'00'}${m[7]}:${m[8]||'00'}`); if(!isNaN(d)) return d}
+  const u=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?:\s+(\d{1,2}):(\d{2}))?/);
+  if(u){const y=+u[3]<100?2000+(+u[3]):+u[3]; d=new Date(y,+u[1]-1,+u[2],+(u[4]||12),+(u[5]||0)); if(!isNaN(d)) return d}
+  return null;
+}
+function readFitbod(text){
+  const rows=parseCsv(text); if(rows.length<2) throw new Error('empty');
+  const head=rows[0].map(h=>h.trim().toLowerCase()), col=re=>head.findIndex(h=>re.test(h));
+  const ci={date:col(/date|time/),ex:col(/exercise|name/),reps:col(/^reps?\b|repetition/),w:col(/weight/),dur:col(/duration|time\s*\(s/),warm:col(/warm/),note:col(/note/)};
+  if(ci.date<0||ci.ex<0) throw new Error('columns');
+  const lbs=ci.w>=0&&/lb/.test(head[ci.w]);
+  const num=v=>{const n=parseFloat(String(v==null?'':v).replace(',','.'));return isNaN(n)?0:n};
+  const sets=[];
+  rows.slice(1).forEach(r=>{
+    const d=parseDate(r[ci.date]), name=(r[ci.ex]||'').trim(); if(!d||!name) return;
+    if(ci.warm>=0&&/^(true|1|yes)$/i.test((r[ci.warm]||'').trim())) return;
+    const reps=ci.reps>=0?num(r[ci.reps]):0, w=ci.w>=0?num(r[ci.w])*(lbs?1/LB:1):0, t=ci.dur>=0?num(r[ci.dur]):0;
+    if(!reps&&!t) return;
+    sets.push({d,name,reps:Math.round(reps),w:Math.round(w*100)/100,t:Math.round(t)});
+  });
+  if(!sets.length) throw new Error('rows');
+  sets.sort((a,b)=>a.d-b.d);
+  // a new workout starts after a gap of 3 hours, or on a new day when the export has no times
+  const groups=[]; let cur=null;
+  sets.forEach(s=>{ if(!cur||s.d-cur.last>3*3600000){cur={sets:[],first:s.d,last:s.d};groups.push(cur)} cur.sets.push(s); cur.last=s.d });
+  const names={}; sets.forEach(s=>{names[s.name]=names[s.name]||{n:0,id:matchExercise(s.name),reps:0,w:0,t:0}; const o=names[s.name]; o.n++; if(s.reps)o.reps++; if(s.w)o.w++; if(s.t&&!s.reps)o.t++});
+  return {groups,names,setCount:sets.length};
+}
+function fitbodPreview(){
+  const F=fitbodImport; if(!F) return '';
+  const names=Object.entries(F.names).sort((a,b)=>b[1].n-a[1].n), unmatched=names.filter(([,o])=>!o.id);
+  const have=new Set(state.sessions.map(s=>s.id)), fresh=F.groups.filter(g=>!have.has(fbId(g))).length;
+  const exOpts=[['new','Add as my own exercise'],...EX.slice().sort((a,b)=>a.n.localeCompare(b.n)).map(x=>[x.id,x.n])];
+  return `<div class="stack" style="gap:10px">
+    <p class="small"><b>${F.groups.length} workouts</b> and ${F.setCount} sets from ${fmtDate(F.groups[0].first)} to ${fmtDate(F.groups[F.groups.length-1].first)}.
+      ${names.length-unmatched.length} of ${names.length} exercises matched this app’s library.${fresh<F.groups.length?` ${F.groups.length-fresh} workouts were imported before and will be skipped.`:''}</p>
+    ${unmatched.length?`<p class="small muted">Choose what each of these should become. Anything left on “Add as my own exercise” is added to your exercise list.</p>
+      <div class="stack" style="gap:6px">${unmatched.map(([n,o])=>`<label class="row small" style="justify-content:space-between"><span><b>${esc(n)}</b> <span class="muted">${o.n} sets</span></span>
+        <select data-fbmap="${esc(n)}" style="max-width:220px">${opt(exOpts,o.map||'new')}</select></label>`).join('')}</div>`:''}
+    <div class="row"><button class="btn sm primary" data-act="fbImport"${fresh?'':' disabled'}>Import ${fresh} workouts</button><button class="btn sm ghost" data-act="fbCancel">Cancel</button></div></div>`;
+}
+const fbId=g=>'fb'+Math.floor(hash(g.first.toISOString())*1e9).toString(36);
+function applyFitbod(){
+  const F=fitbodImport, p=state.profile; p.customEx=p.customEx||[];
+  Object.entries(F.names).forEach(([n,o])=>{
+    if(o.id) return;
+    if(o.map&&o.map!=='new'){o.id=o.map;return}
+    const pat=guessPattern(n), [pp,sub]=pat.split('.');
+    const c={id:'cx'+uid6(),n,p:pp,t:o.reps?(o.w?'wr':'bw'):'time',m:PAT_MUS[pp]||['abs'],eq:[],c:[]};
+    if(sub) c.sub=sub;
+    p.customEx.push(c); o.id=c.id;
+  });
+  rebuildLibrary();
+  const have=new Set(state.sessions.map(s=>s.id)); let added=0;
+  F.groups.forEach(g=>{
+    const id=fbId(g); if(have.has(id)) return;
+    const by=new Map();
+    g.sets.forEach(s=>{const ex=F.names[s.name].id; if(!by.has(ex)) by.set(ex,[]); by.get(ex).push(BYID[ex]&&BYID[ex].t==='time'?{w:s.w||null,r:null,t:s.t||null}:{w:s.w||null,r:s.reps||null,t:s.t||null})});
+    const entries=[...by.entries()].map(([ex,sets])=>({ex,sets}));
+    const pats=new Set(entries.map(e=>BYID[e.ex]&&BYID[e.ex].p)), up=['hpush','vpush','hpull','vpull','arms'].some(k=>pats.has(k)), low=['squat','hinge','single'].some(k=>pats.has(k));
+    const end=new Date(Math.max(g.last.getTime(),g.first.getTime()+g.sets.length*2.5*60000));
+    state.sessions.push({id,ts:g.first.toISOString(),end:end.toISOString(),focus:up&&low?'full':up?'upper':low?'lower':'full',entries,src:'fitbod'});
+    added++;
+  });
+  state.sessions.sort((a,b)=>a.ts<b.ts?-1:1);
+  p.examples=false; saveProfile(); planCache=null; fitbodImport=null;
+  return added;
+}
+
 /* ---------------- Events ---------------- */
 function toast(t){const h=document.getElementById('toastHost');h.innerHTML=`<div class="toast" role="status">${esc(t)}</div>`;clearTimeout(toast.t);toast.t=setTimeout(()=>h.innerHTML='',2600)}
 const toggle=(arr,v)=>{const i=arr.indexOf(v);i>=0?arr.splice(i,1):arr.push(v)};
@@ -1044,6 +1188,8 @@ document.addEventListener('click',async e=>{
   if(d.del){state.sessions=state.sessions.filter(s=>s.id!==d.del);state.deleted.push(d.del);pendingDelete=null;saveLocal();toast('Workout deleted');render();return}
   if(d.rmex){p.customEx=p.customEx.filter(c=>c.id!==d.rmex);p.favorites=p.favorites.filter(f=>f!==d.rmex);selected=null;touchProfile();rebuildLibrary();render();return}
   switch(d.act){
+    case 'fbCancel': fitbodImport=null; render(); return;
+    case 'fbImport': {const n=applyFitbod(); toast(`Imported ${n} workouts from Fitbod`); render(); return}
     case 'start': startWorkout(); return;
     case 'shuffle': reshuffle(); return;
     case 'dismissSum': lastSummary=null; render(); return;
@@ -1090,6 +1236,11 @@ document.addEventListener('change',async e=>{
   if(d.bw){const v=fromDisp(t.value); if(v&&v>20&&v<400){p.bw=v;saveProfile()} else toast('Enter your bodyweight');return}
   if(d.exfilter){exFilter=t.value;render();return}
   if(d.chart){chartEx=t.value;render();return}
+  if(d.fbmap&&fitbodImport){fitbodImport.names[d.fbmap].map=t.value;return}
+  if(t.id==='fitbodFile'&&t.files[0]){
+    try{fitbodImport=readFitbod(await t.files[0].text())}
+    catch(err){toast(err.message==='columns'?'That file doesn’t have Date and Exercise columns. Is it the Fitbod CSV export?':'No sets found in that file.')}
+    render(); return}
   if(t.id==='importFile'&&t.files[0]){
     try{const j=JSON.parse(await t.files[0].text()); if(!j.profile||!Array.isArray(j.sessions)) throw 0;
       const have=new Set(state.sessions.map(s=>s.id)), add=j.sessions.filter(s=>s&&s.id&&Array.isArray(s.entries)&&!have.has(s.id));
