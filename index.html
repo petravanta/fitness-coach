@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Fitness Coach</title>
+<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
@@ -311,7 +312,7 @@ function rebuildLibrary(){
 
 /* ---------------- State & storage ---------------- */
 /* Google Drive sync: the same OAuth client as Skating Mentor; it works for any page on https://petravanta.github.io. Leave empty to turn Drive off. */
-const GOOGLE_CLIENT_ID='326863468616-4hf2conk0ks0s4qdva9tphphdo7ht7eh.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID=/^(petravanta\.github\.io|localhost)$/.test(location.hostname)?'326863468616-4hf2conk0ks0s4qdva9tphphdo7ht7eh.apps.googleusercontent.com':'';
 const LS_KEY='fitnessCoach.v1', LS_PLAN='fitnessCoach.plan', LS_ACTIVE='fitnessCoach.active';
 const DAY=86400000, LB=2.20462;
 const uid6=()=>Math.random().toString(36).slice(2,8)+Date.now().toString(36).slice(-4);
@@ -425,7 +426,7 @@ function driveDisconnect(){
   Drive.token=null; Drive.on=false; Drive.err=null; lsSet('fc.driveOn',false); lsSet('fc.driveTok',null); showDriveStatus(); render();
 }
 function drivePanel(){
-  if(!driveConfigured()) return `<p class="small muted">Google Drive sync isn’t set up for this copy of the app yet.</p>`;
+  if(!driveConfigured()) return `<p class="small muted">Google Drive sync works in the copy of the app at petravanta.github.io/fitness-coach. Here your data stays in this browser.</p>`;
   if(!Drive.on) return `<p class="small">Keep your workouts in your own Google Drive and pick them up on any device. The app can only see the file it creates there.</p>
     <div class="row"><button class="btn sm primary" data-act="driveConnect">Connect Google Drive</button></div>`;
   return `<p class="small">${esc(driveStatus()||'')}. Changes save to <b>${esc(DRIVE_FILE)}</b> in your Drive a few seconds after you make them.</p>
