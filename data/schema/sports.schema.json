@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Sports",
+  "description": "Sports people can train for. Each sport weights the athletic qualities it needs, and the coach favors exercises that build them.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["id", "name", "qualities"],
+    "properties": {
+      "id": {"type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "description": "Stable short id. Saved profiles refer to it, so never change or reuse one that has shipped."},
+      "name": {"type": "string", "minLength": 2, "description": "Name shown in the app."},
+      "qualities": {
+        "type": "object", "minProperties": 1,
+        "propertyNames": {"enum": ["power", "single", "lat", "rot", "grip", "endur", "mob", "core", "post", "shoulder"]},
+        "additionalProperties": {"type": "integer", "minimum": 1, "maximum": 3},
+        "description": "How much the sport relies on each quality, from 1 (a little) to 3 (a lot). See exercises.schema.json for what each quality means."
+      }
+    }
+  }
+}

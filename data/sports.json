@@ -1,0 +1,67 @@
+[
+  {
+    "id": "skate",
+    "name": "Skating",
+    "qualities": {"single": 3, "lat": 3, "post": 2, "core": 2, "power": 1, "mob": 1}
+  },
+  {
+    "id": "run",
+    "name": "Running",
+    "qualities": {"single": 3, "post": 2, "power": 2, "endur": 2, "core": 1}
+  },
+  {
+    "id": "cycle",
+    "name": "Cycling",
+    "qualities": {"single": 2, "post": 2, "core": 2, "mob": 2, "endur": 1}
+  },
+  {
+    "id": "racket",
+    "name": "Tennis & racket sports",
+    "qualities": {"rot": 3, "lat": 3, "power": 2, "shoulder": 2}
+  },
+  {
+    "id": "ski",
+    "name": "Skiing & snowboarding",
+    "qualities": {"single": 3, "lat": 2, "core": 2, "endur": 2}
+  },
+  {
+    "id": "climb",
+    "name": "Climbing",
+    "qualities": {"grip": 3, "shoulder": 2, "core": 2, "mob": 1}
+  },
+  {
+    "id": "swim",
+    "name": "Swimming",
+    "qualities": {"shoulder": 3, "core": 2, "mob": 2, "endur": 1}
+  },
+  {
+    "id": "soccer",
+    "name": "Soccer",
+    "qualities": {"single": 3, "lat": 2, "power": 2, "post": 2}
+  },
+  {
+    "id": "hoops",
+    "name": "Basketball & volleyball",
+    "qualities": {"power": 3, "single": 2, "lat": 2}
+  },
+  {
+    "id": "hike",
+    "name": "Hiking",
+    "qualities": {"single": 2, "endur": 3, "grip": 1}
+  },
+  {
+    "id": "fight",
+    "name": "Martial arts",
+    "qualities": {"rot": 3, "power": 2, "core": 2, "mob": 2}
+  },
+  {
+    "id": "golf",
+    "name": "Golf",
+    "qualities": {"rot": 3, "mob": 3, "core": 2}
+  },
+  {
+    "id": "surf",
+    "name": "Surfing & paddling",
+    "qualities": {"shoulder": 3, "core": 2, "mob": 2, "single": 1}
+  }
+]
