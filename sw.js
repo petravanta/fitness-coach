@@ -1,7 +1,7 @@
 // Offline shell (petravanta's apps standard, see general/STANDARDS.md): the app opens without a connection.
 // Pages come from the network when possible and from this cache otherwise. User data never goes in here; it lives in Google Drive.
-const CACHE='fitness-coach-v1';
-const SHELL=['./','index.html','manifest.webmanifest','icon.svg','icon-192.png','apple-touch-icon.png'];
+const CACHE='fitness-coach-v2';
+const SHELL=['./','index.html','manifest.webmanifest','icon.svg','data/exercises.json','data/sports.json','data/equipment.json','icon-192.png','apple-touch-icon.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 self.addEventListener('fetch',e=>{
