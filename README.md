@@ -6,13 +6,14 @@ A browser-based gym coach. Tell it what equipment you have, which sports you pla
 
 **[Open Fitness Coach → petravanta.github.io/fitness-coach](https://petravanta.github.io/fitness-coach/)**
 
-It runs in any modern browser on phone or desktop, with no sign-up. To get started:
+It runs in any modern browser on phone or desktop. To get started:
 
+0. Tap **Connect Google Drive**. Your data is kept in your own Drive.
 1. Go to **Gear & goals**: tick your equipment, pick the sports you cross-train for, star the muscles you want to prioritise, and set the slider between *Look* (muscle and shape) and *Perform* (power and sport).
 2. On **Exercises**, star your favorites. Plans pick them more often. **Add your own** for anything missing.
 3. On **Today**, choose how long you have and a focus (or let it pick), then **Start workout**.
 
-On a phone, use *Add to Home Screen* to open it like an app.
+On a phone, add it to your home screen (see *On your phone* below).
 
 ## What it does
 
@@ -28,15 +29,23 @@ Under *Settings → Import from Fitbod*, pick the CSV from Fitbod's *Export work
 
 ## Your data
 
-Everything is stored in your browser (`localStorage`). Turn on **Google Drive sync** under *Settings* to keep a copy in your Drive and use it on several devices. **Export backup** downloads a JSON file you can import into any copy of the app.
+Everything lives in **one file in your Google Drive**, `Fitness Coach data.json`: settings, workouts and a workout in progress. The first time you open the app it asks you to connect Google Drive; after that it saves a moment after every change, and any device you sign in on picks up the same data. The app uses the `drive.file` permission, so it can only see the file it created.
+
+The browser keeps only your Google sign-in and, while you're offline or the sign-in has lapsed, a copy of changes that haven't reached Drive yet. That copy is deleted as soon as Drive has it. Google sign-ins last about an hour; if one lapses mid-workout, the next tap renews it (Google may flash a window that closes by itself). **Export backup** under *Settings* still downloads a JSON copy.
+
+*Look around without saving* lets you try the app without connecting; nothing is kept.
+
+## On your phone
+
+Open the app in your phone's browser and use *Add to Home Screen* (Safari: Share → Add to Home Screen; Chrome: ⋮ → Install app). It then opens full-screen like an app, with the tabs along the bottom, and the app itself opens even without a connection. During a workout the screen stays on.
 
 ## Running it
 
-It's a single static file, `index.html`, with no build step. Open it in a browser, or serve it with GitHub Pages (Settings → Pages → Deploy from branch → `main` / root).
+It's a static page (`index.html`, plus `manifest.webmanifest`, `sw.js` and icons for installing on a phone) with no build step. Open it in a browser, or serve it with GitHub Pages (Settings → Pages → Deploy from branch → `main` / root).
 
 ## Google Drive sync
 
-Works the same way as in [Skating Mentor](https://github.com/petravanta/skating-mentor): **Connect Google Drive** signs you in and keeps `Fitness Coach data.json` in your Drive, saved a few seconds after each change and merged when you connect another device (every workout is kept; the most recently edited settings win). It uses the `drive.file` permission, so it can only see the files it creates.
+The storage code is the shared Drive store from [petravanta/general](https://github.com/petravanta/general) (`shared/drive-store.js`), inlined between the `Drive store` comments. When two devices have changes, every workout is kept and the most recently edited settings win.
 
 It reuses Skating Mentor's OAuth client ID. That client already allows `https://petravanta.github.io`, which covers every app hosted there, so no new Google Cloud setup is needed. The Google sign-in window shows the app name set on the OAuth consent screen; rename it there (for example to *Petra's apps*) if you want one name for both apps.
 
