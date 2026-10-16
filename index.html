@@ -502,7 +502,8 @@ function drivePanel(){
     <div class="row"><button class="btn sm primary" data-act="signin" data-drive="1">Connect Google Drive</button></div>`;
   return `<p class="small">${esc(store.status())}. Everything is saved to <b>${esc(store.file)}</b> in your Drive a moment after each change. The app can only see files it created there.</p>
     <div class="row"><button class="btn sm" data-act="driveSave" data-drive="1">Save now</button>
-    ${pendingDelete==='SIGNOUT'?`<button class="btn sm danger" data-act="signOut" data-drive="1">Sign out</button><button class="btn sm ghost" data-delcancel="1">Cancel</button>`:`<button class="btn sm ghost" data-delask="SIGNOUT">Sign out of Google Drive</button>`}</div>`;
+    ${pendingDelete==='SIGNOUT'?`<button class="btn sm danger" data-act="signOut" data-drive="1">Sign out</button><button class="btn sm ghost" data-delcancel="1">Cancel</button>`:`<button class="btn sm ghost" data-delask="SIGNOUT">Sign out of Google Drive</button>`}</div>
+    <p class="small muted"><a href="https://petravanta.github.io/general/privacy.html" target="_blank" rel="noopener">Privacy</a> · <a href="https://petravanta.github.io/general/terms.html" target="_blank" rel="noopener">Terms</a></p>`;
 }
 // Earlier versions kept data in this browser; move it into Drive once and remove it here
 function migrateLegacy(){
@@ -533,7 +534,8 @@ function viewGate(){
     <p>Fitness Coach saves your workouts, settings and progress to one file in your own Google Drive, so you can pick up on any device. It can only see the file it creates.</p>
     ${store.known?'<p class="small muted">Google sign-ins last about an hour, so the app asks again when you come back after a while.</p>':''}
     <div class="row"><button class="btn primary big" data-act="signin" data-drive="1">${store.known?'Reconnect':'Connect Google Drive'}</button>
-    <button class="btn ghost" data-act="demo">Look around without saving</button></div></div>`;
+    <button class="btn ghost" data-act="demo">Look around without saving</button></div>
+    <p class="small muted"><a href="https://petravanta.github.io/general/privacy.html" target="_blank" rel="noopener">Privacy</a> · <a href="https://petravanta.github.io/general/terms.html" target="_blank" rel="noopener">Terms</a></p></div>`;
 }
 /* ---------------- Units & numbers ---------------- */
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
