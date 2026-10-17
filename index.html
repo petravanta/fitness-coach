@@ -134,7 +134,7 @@ textarea{resize:vertical}
 .ex .name:hover{text-decoration:underline;text-decoration-color:var(--accent)}
 .ex .dose{grid-column:2;font-size:14px}
 .ex .sug{grid-column:2/span 2;font-size:13px;color:var(--muted)}
-@media (max-width:560px){.block{grid-template-columns:minmax(0,1fr)}.block .slot{grid-row:auto;text-align:left;display:flex;gap:6px;align-items:baseline}.block .slot b{display:inline;font-size:14px}}
+@media (max-width:560px){.block{grid-template-columns:minmax(0,1fr)}.block>*,.block .exl{grid-column:1!important}.blkhead .role{flex-basis:100%}.block .slot{grid-row:auto;text-align:left;display:flex;gap:6px;align-items:baseline}.block .slot b{display:inline;font-size:14px}}
 /* runner */
 .runbar{display:flex;gap:8px 16px;flex-wrap:wrap;align-items:center;font-size:13px;color:var(--muted)}
 .runbar b{color:var(--ink)}
@@ -155,6 +155,27 @@ textarea{resize:vertical}
 .rest.over .meter i{background:var(--danger)}
 .focus-line{font-size:15px;color:var(--muted);font-style:italic}
 .next{background:var(--sunk);border-radius:10px;padding:12px 14px;text-align:left;width:100%}
+.blkhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.blkhead .role{margin-right:auto}
+.setsctl,.mv{display:inline-flex;align-items:center;gap:4px;font-size:13px;color:var(--muted)}
+.setsctl b{color:var(--ink);min-width:1.2em;text-align:center}
+.setsctl .btn,.mv .btn{min-width:32px;padding:3px 0;line-height:1.2}
+.setsctl .btn:disabled,.mv .btn:disabled{opacity:.35;cursor:default}
+.setrows{grid-column:2/span 2;display:flex;flex-wrap:wrap;gap:6px}
+.setrows span{font-family:var(--f-mono);font-size:13px;background:var(--sunk);border-radius:6px;padding:2px 8px}
+.setrows i{font-style:normal;color:var(--faint);margin-right:6px}
+.setlist{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.setrow{display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:10px;align-items:center;text-align:left;background:var(--surface);border:0;border-top:1px solid var(--line);padding:8px 12px;min-height:44px}
+.setrow:first-child{border-top:0}
+.setrow i{font-style:normal;font-size:13px;color:var(--muted)}
+.setrow em{font-style:normal;font-size:13px;font-weight:700}
+.setrow.done em{color:var(--lv-conf)}
+.setrow.now{background:var(--accent-soft)}
+.setrow.now em{color:var(--accent)}
+.setrow.skipped span{color:var(--faint);text-decoration:line-through}
+.runitem{display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--line)}
+.runitem .runrow{flex:1;border-bottom:0}
+@media (max-width:640px){.setsctl .btn,.mv .btn{min-width:40px;min-height:40px}}
 .setlog{display:flex;flex-wrap:wrap;gap:6px}
 .setlog span{font-family:var(--f-mono);font-size:13px;background:var(--sunk);border-radius:6px;padding:2px 8px}
 .upnext{font-size:13px;color:var(--muted)}
@@ -664,10 +685,50 @@ function swapIn(plan,bi,ii){
   const role=plan.blocks[bi].role, d=dose(role==='look'||role==='sport'?'acc':role,BYID[next]); d.sets=it.d.sets; if(role==='warm'){d.sets=1}
   it.d=d; return true;
 }
+function roundW(x,kg){const step=U()==='lb'?5/LB:(x.per?2:2.5); return Math.max(step,Math.round(kg/step)*step)}
+// No history for this exercise yet: estimate a starting weight from recent lifts that train the same muscle, preferring the same movement.
+// Lifts with a strength standard compare through that standard; others only borrow from a near twin (same movement, muscle and grip style).
+function relatedStart(x,d){
+  if(x.t!=='wr'||!d.reps) return null;
+  const since=Date.now()-120*DAY, best={};
+  state.sessions.forEach(ses=>{ if(new Date(ses.ts).getTime()<since) return;
+    ses.entries.forEach(e=>{const y=BYID[e.ex]; if(!y||y.id===x.id||y.t!=='wr') return;
+      const tier=(y.p===x.p?2:0)+(y.m[0]===x.m[0]?1:0); if(!tier) return;
+      if(!x.std&&(tier<3||y.std||y.per!==x.per||y.sub!==x.sub)) return;
+      if(x.std&&!y.std) return;
+      e.sets.forEach(s=>{if(!s.w||!s.r) return; const v=x.std?setScore(y,s):e1rm(y,s); if(v>0&&(!best[y.id]||v>best[y.id].v)) best[y.id]={v,y,s,tier}})})});
+  const all=Object.values(best); if(!all.length) return null;
+  const top=Math.max(...all.map(o=>o.tier)), use=all.filter(o=>o.tier===top).sort((a,b)=>b.v-a.v);
+  const v=use.reduce((t,o)=>t+o.v,0)/use.length*.85; // a little under, since it's a different exercise
+  const max=x.std?v*bwKg()*x.std:v, w=max/(1+d.reps[1]/30)-(x.bwf?bwKg()*x.bwf:0);
+  if(!(w>0)) return null;
+  return {w:roundW(x,w),from:use.slice(0,2).map(o=>o.y)};
+}
+// Editing a plan: move a block up or down, or change its number of sets. The warm-up stays first.
+function canMove(plan,bi,dir){const bl=plan.blocks, nb=bi+dir; return nb>=0&&nb<bl.length&&bl[bi].role!=='warm'&&bl[nb].role!=='warm'}
+function moveBlock(plan,bi,dir){if(!canMove(plan,bi,dir)) return false; const bl=plan.blocks; [bl[bi],bl[bi+dir]]=[bl[bi+dir],bl[bi]]; return true}
+function setCount(plan,bi,n){
+  const b=plan.blocks[bi]; if(!b||b.role==='warm') return false; n=Math.max(1,Math.min(10,n)); if(n===b.items[0].d.sets) return false;
+  b.items.forEach(it=>it.d.sets=n); plan.est=plan.blocks.reduce((t,b)=>t+blockSecs(b),0); return true;
+}
+// Sets shown for each exercise: the target for every set, using the suggested weight
+function targetTxt(x,d,sg){
+  if(d.secs) return `${sg&&sg.t||d.secs}s`;
+  const r=sg&&sg.r||d.reps[0];
+  if(x.t==='wr') return sg&&sg.w!=null?`${wtxt(sg.w)} × ${r}`:`${d.reps[0]}–${d.reps[1]} reps`;
+  return `${r} reps${sg&&sg.w?' +'+wtxt(sg.w):''}`;
+}
+function setsCtl(b,bi,kind,min=1){const n=b.items[0].d.sets;
+  return `<span class="setsctl"><button class="btn sm" data-${kind}="${bi}" data-v="-1" aria-label="One set fewer"${n<=min?' disabled':''}>−</button><b class="mono">${n}</b> sets<button class="btn sm" data-${kind}="${bi}" data-v="1" aria-label="One set more"${n>=10?' disabled':''}>+</button></span>`}
+function moveCtl(plan,bi,kind){return `<span class="mv"><button class="btn sm" data-${kind}="${bi}" data-v="-1" aria-label="Move up"${canMove(plan,bi,-1)?'':' disabled'}>↑</button><button class="btn sm" data-${kind}="${bi}" data-v="1" aria-label="Move down"${canMove(plan,bi,1)?'':' disabled'}>↓</button></span>`}
 // Progressive overload: what to aim for this time, from the last time you did it
 function suggest(x,d){
   const L=lastEntry(x.id);
-  if(!L) return {w:null,r:d.reps?d.reps[0]:null,t:d.secs||null,note:x.t==='wr'?`First time: pick a weight you could do about ${(d.reps?d.reps[1]:10)+2} times`:''};
+  if(!L){
+    const g=relatedStart(x,d);
+    if(g) return {w:g.w,r:d.reps[0],est:true,note:`New exercise. From your ${g.from.map(y=>y.n).join(' and ')} (${(MUS[x.m[0]]||x.m[0]).toLowerCase()}), start around ${wtxt(g.w)} and adjust after the first set.`};
+    return {w:null,r:d.reps?d.reps[0]:null,t:d.secs||null,note:x.t==='wr'?`First time: pick a weight you could do about ${(d.reps?d.reps[1]:10)+2} times`:''};
+  }
   if(x.t==='time'){const best=Math.max(...L.sets.map(s=>s.t||0)),w=Math.max(...L.sets.map(s=>s.w||0))||null;return {w,t:best+5,note:`Last time ${best}s${w?' with '+wtxt(w):''}. Go 5s longer.`}}
   const top=Math.max(...L.sets.map(s=>s.w||0)), atTop=L.sets.filter(s=>(s.w||0)===top), minR=Math.min(...atTop.map(s=>s.r||0)), maxR=Math.max(...L.sets.map(s=>s.r||0));
   if(x.t==='bw'){
@@ -714,6 +775,22 @@ function goExercise(b,i){
   active.k=k; active.phase='set'; active.rest=null; initDraft();
   const l=active.log[k]; if(l) active.draft={w:l.w,r:l.r,t:l.t};
   selected=null; saveActive(); render(); window.scrollTo(0,0);
+}
+// Change the running workout's plan; logged and skipped sets stay with the same exercise and set number
+function editActive(fn){
+  const A=active, ref=A.steps.map((s,j)=>({blk:A.plan.blocks[s.b],i:s.i,s:s.s,skip:s.skip,log:A.log[j]})), cur=A.phase!=='done'?ref[A.k]:null;
+  if(!fn(A.plan)) return;
+  const steps=buildSteps(A.plan), log={}; let k=-1;
+  steps.forEach((st,j)=>{const o=ref.find(r=>r.blk===A.plan.blocks[st.b]&&r.i===st.i&&r.s===st.s); if(!o) return; if(o.skip) st.skip=true; if(o.log) log[j]=o.log; if(o===cur) k=j});
+  A.steps=steps; A.log=log; A.est=A.plan.blocks.reduce((t,b)=>t+blockSecs(b),0);
+  if(k<0){k=nextOpen(0); if(k<0) A.phase='done'; else {A.k=k; if(A.phase==='done') A.phase='set'; initDraft()}}
+  else A.k=k;
+  saveActive(); render();
+}
+function goSet(j){
+  const A=active; delete A.steps[j].skip; A.k=j; A.phase='set'; A.rest=null; initDraft();
+  const l=A.log[j]; if(l) A.draft={w:l.w,r:l.r,t:l.t};
+  saveActive(); render();
 }
 function stepExercise(dir){const L=exList(), st=active.steps[active.k]; if(!st) return; const t=L[L.findIndex(e=>e.b===st.b&&e.i===st.i)+dir]; if(t) goExercise(t.b,t.i)}
 function curItem(k=active.k){const st=active.steps[k]; if(!st) return null; const b=active.plan.blocks[st.b]; return {st,b,it:b.items[st.i],x:BYID[b.items[st.i].ex]}}
@@ -824,12 +901,13 @@ function viewToday(){
   const blocks=plan.blocks.map((b,bi)=>{
     const ss=b.items.length>1&&b.role!=='warm', letter=b.role==='warm'?'W':String.fromCharCode(65+bi-(plan.blocks[0].role==='warm'?1:0));
     return `<article class="block"><div class="slot"><b>${Math.round(blockSecs(b)/60)}</b><span>min</span></div>
-      <div class="role ${b.role}">${ROLE_NAME[b.role]}${ss?' · superset':''}</div>
+      <div class="blkhead"><span class="role ${b.role}">${ROLE_NAME[b.role]}${ss?' · superset':''}</span>${b.role==='warm'?'':setsCtl(b,bi,'psets')+moveCtl(plan,bi,'pmove')}</div>
       <div class="exl" style="grid-column:2">${b.items.map((it,ii)=>{const x=BYID[it.ex], sg=b.role==='warm'?null:suggest(x,it.d);
         return `<div class="ex"><span class="tag">${letter}${ss||b.role==='warm'?ii+1:''}</span><button class="name" data-open="${x.id}">${esc(x.n)}${p.favorites.includes(x.id)?' <span style="color:var(--accent)">★</span>':''}</button>
           <button class="btn sm ghost" data-swap="${bi}:${ii}" title="Swap for another exercise">Swap</button>
           <span class="dose mono">${esc(doseTxt(x,it.d,ss?(ii===b.items.length-1?b.rest:0):b.rest))}</span>
-          ${sg&&(sg.w!=null||sg.note)?`<span class="sug">${sg.w!=null&&x.t==='wr'?`Try <b>${wtxt(sg.w)}</b>${sg.r?' × '+sg.r:''}. `:''}${esc(sg.note)}</span>`:''}</div>`}).join('')}</div></article>`}).join('');
+          ${b.role==='warm'?'':`<span class="setrows">${Array.from({length:it.d.sets},(_,s)=>`<span><i>${s+1}</i>${esc(targetTxt(x,it.d,sg))}</span>`).join('')}</span>`}
+          ${sg&&sg.note?`<span class="sug">${esc(sg.note)}</span>`:''}</div>`}).join('')}</div></article>`}).join('');
   return `<div class="stack">
     ${sum}
     ${mode==='demo'?`<div class="banner"><p>${store.configured?'You’re looking around without saving. Connect Google Drive to keep your workouts.':'This is a preview. Nothing you do here is saved.'}</p>${store.configured?'<button class="btn sm primary" data-act="signin" data-drive="1">Connect Google Drive</button>':''}</div>`:''}
@@ -887,12 +965,24 @@ function viewRun(){
     <div class="target">Target: ${esc(target)}${x.per&&x.t==='wr'?' <span class="small muted">(weight per hand)</span>':''}</div>
     ${sg.note&&c.b.role!=='warm'?`<p class="small muted">${esc(sg.note)}</p>`:''}
     <div class="steppers">${inputs}</div>
-    ${prev.length?`<div class="setlog">${prev.map((l,i)=>`<span>Set ${i+1}: ${esc(setTxt(x,l))}</span>`).join('')}</div>`:''}
+    ${c.b.role==='warm'?(prev.length?`<div class="setlog">${prev.map((l,i)=>`<span>${esc(setTxt(x,l))}</span>`).join('')}</div>`:''):runSets(c,x,sg)}
     <ul class="cues small">${x.c.map(q=>`<li>${esc(q)}</li>`).join('')}</ul>
     <button class="btn primary done-set" data-act="done">Done${c.b.role==='warm'?'':' set'}</button>
     <div class="row"><button class="btn sm" data-act="swapRun">Swap exercise</button><button class="btn sm ghost" data-act="skipEx">Skip exercise</button>${doneN?`<button class="btn sm ghost" data-act="undo">Undo last set</button>`:''}</div>
     ${upcoming.length?`<p class="upnext">Up next: ${esc(upcoming.join(' · '))}</p>`:''}
   </section></div>`;
+}
+
+// Every set of the current exercise: done, now, skipped or still to do. Tap one to do it (or redo it) next.
+function runSets(c,x,sg){
+  const A=active, e=exList().find(o=>o.b===c.st.b&&o.i===c.st.i), maxLogged=Math.max(0,...e.steps.filter(j=>A.log[j]).map(j=>A.steps[j].s+1));
+  const ss=c.b.items.length>1, n=c.it.d.sets;
+  const rows=e.steps.map(j=>{const l=A.log[j], st=A.steps[j], now=j===A.k;
+    const txt=l?(x.t==='wr'?targetTxt(x,c.it.d,l):setTxt(x,l)):now&&A.draft?targetTxt(x,c.it.d,{w:A.draft.w,r:A.draft.r,t:A.draft.t}):targetTxt(x,c.it.d,sg);
+    return `<button class="setrow${now?' now':''}${l?' done':''}${st.skip&&!l?' skipped':''}" data-goset="${j}"><i>Set ${st.s+1}</i><span class="mono">${esc(txt)}</span><em>${l?'✓':now?'Now':st.skip?'Skipped':''}</em></button>`}).join('');
+  return `<div class="setlist">${rows}</div>
+    <div class="row setedit"><button class="btn sm" data-rsets="${c.st.b}" data-v="1"${n>=10?' disabled':''}>+ Add ${ss?'a round':'a set'}</button>
+    ${n>Math.max(1,maxLogged)?`<button class="btn sm ghost" data-rsets="${c.st.b}" data-v="-1">Remove last ${ss?'round':'set'}</button>`:''}</div>`;
 }
 
 /* ----- Progress ----- */
@@ -1050,9 +1140,9 @@ function renderDrawer(){
     host.innerHTML=`<div class="scrim" data-close="1"></div><aside class="drawer" role="dialog" aria-label="Exercises in this workout"><button class="x" data-close="1" aria-label="Close">×</button>
       <h2>This workout</h2><div class="runlist">${exList().map(e=>{const it=active.plan.blocks[e.b].items[e.i], x=BYID[it.ex], done=e.steps.filter(j=>active.log[j]).length,
         skipped=e.steps.every(j=>active.steps[j].skip||active.log[j])&&e.steps.some(j=>active.steps[j].skip), cur=active.phase!=='done'&&active.steps[active.k]&&active.steps[active.k].b===e.b&&active.steps[active.k].i===e.i;
-        return `<button class="runrow${cur?' cur':''}" data-goex="${e.b}:${e.i}"><span class="tag">${exTag(e.b,e.i)}</span><span class="nm">${esc(x.n)}</span>
-          <span class="small ${done===e.steps.length?'ok':'muted'}">${skipped?'Skipped':done===e.steps.length?'Done ✓':`${done}/${e.steps.length} sets`}</span></button>`}).join('')}</div>
-      <p class="small muted">Tap an exercise to jump to it. You can come back to anything you skip.</p></aside>`;
+        return `<div class="runitem"><button class="runrow${cur?' cur':''}" data-goex="${e.b}:${e.i}"><span class="tag">${exTag(e.b,e.i)}</span><span class="nm">${esc(x.n)}</span>
+          <span class="small ${done===e.steps.length?'ok':'muted'}">${skipped?'Skipped':done===e.steps.length?'Done ✓':`${done}/${e.steps.length} sets`}</span></button>${e.i===0&&active.plan.blocks[e.b].role!=='warm'?moveCtl(active.plan,e.b,'rmove'):''}</div>`}).join('')}</div>
+      <p class="small muted">Tap an exercise to jump to it, or use the arrows to change the order (supersets move together). You can come back to anything you skip.</p></aside>`;
     return;
   }
   if(selected==='new'){
@@ -1230,6 +1320,13 @@ document.addEventListener('click',async e=>{
   if(d.close){selected=null;render();return}
   if(d.open){selected=d.open;render();return}
   if(d.goex){const [b,i]=d.goex.split(':').map(Number); goExercise(b,i); return}
+  if(d.goset&&active){goSet(+d.goset); return}
+  if(d.pmove&&planCache){if(moveBlock(planCache,+d.pmove,+d.v)){persist();render()} return}
+  if(d.psets&&planCache){const b=planCache.blocks[+d.psets]; if(b&&setCount(planCache,+d.psets,b.items[0].d.sets+(+d.v))){persist();render()} return}
+  if(d.rmove&&active){editActive(pl=>moveBlock(pl,+d.rmove,+d.v)); return}
+  if(d.rsets&&active){const bi=+d.rsets, b=active.plan.blocks[bi], n=b.items[0].d.sets+(+d.v),
+    logged=Math.max(0,...active.steps.filter((st,j)=>st.b===bi&&active.log[j]).map(st=>st.s+1)); if(n<logged) return;
+    editActive(pl=>setCount(pl,bi,n)); return}
   if(d.swap){const [bi,ii]=d.swap.split(':').map(Number); if(swapIn(planCache,bi,ii)){persist();render()} return}
   if(d.fav){toggle(p.favorites,d.fav);touchProfile();render();return}
   if(d.eq){toggle(p.equipment,d.eq);touchProfile();render();return}
