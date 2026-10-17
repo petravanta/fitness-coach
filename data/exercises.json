@@ -1,0 +1,932 @@
+[
+  {
+    "id": "bsquat",
+    "name": "Back squat",
+    "pattern": "squat",
+    "muscles": ["quads", "glutes"],
+    "equipment": [["barbell", "rack"]],
+    "tracking": "weight-reps",
+    "qualities": ["post"],
+    "strongRatio": 1.5,
+    "mainLift": true,
+    "cues": ["Brace hard before you descend", "Knees track over your toes", "Drive the floor away"]
+  },
+  {
+    "id": "fsquat",
+    "name": "Front squat",
+    "pattern": "squat",
+    "muscles": ["quads", "abs"],
+    "equipment": [["barbell", "rack"]],
+    "tracking": "weight-reps",
+    "qualities": ["core"],
+    "strongRatio": 1.2,
+    "mainLift": true,
+    "cues": [
+      "Elbows high, chest proud",
+      "Sit straight down between your heels",
+      "Stay tall out of the bottom"
+    ]
+  },
+  {
+    "id": "goblet",
+    "name": "Goblet squat",
+    "pattern": "squat",
+    "muscles": ["quads", "glutes"],
+    "equipment": [["dumbbell"], ["kettlebell"]],
+    "tracking": "weight-reps",
+    "qualities": ["mob"],
+    "strongRatio": 0.6,
+    "cues": [
+      "Hold the weight at your chest",
+      "Elbows inside the knees at the bottom",
+      "Pause low, then stand"
+    ]
+  },
+  {
+    "id": "legpress",
+    "name": "Leg press",
+    "pattern": "squat",
+    "muscles": ["quads", "glutes"],
+    "equipment": [["legpress"]],
+    "tracking": "weight-reps",
+    "strongRatio": 2.6,
+    "cues": [
+      "Feet shoulder-width, mid-platform",
+      "Lower until your hips start to tuck",
+      "Don’t slam the knees straight"
+    ]
+  },
+  {
+    "id": "dl",
+    "name": "Deadlift",
+    "pattern": "hinge",
+    "muscles": ["hams", "glutes", "back"],
+    "equipment": [["barbell"]],
+    "tracking": "weight-reps",
+    "qualities": ["post", "grip"],
+    "strongRatio": 2,
+    "mainLift": true,
+    "cues": [
+      "Bar over mid-foot, shins to the bar",
+      "Pull the slack out before it leaves the floor",
+      "Hips and shoulders rise together"
+    ]
+  },
+  {
+    "id": "tbdl",
+    "name": "Trap bar deadlift",
+    "pattern": "hinge",
+    "muscles": ["quads", "glutes", "hams"],
+    "equipment": [["trapbar"]],
+    "tracking": "weight-reps",
+    "qualities": ["post", "power"],
+    "strongRatio": 2.1,
+    "mainLift": true,
+    "cues": [
+      "Stand centred in the handle",
+      "Chest up, lats tight",
+      "Drive hard through the whole foot"
+    ]
+  },
+  {
+    "id": "rdl",
+    "name": "Romanian deadlift",
+    "pattern": "hinge",
+    "muscles": ["hams", "glutes"],
+    "equipment": [["barbell"], ["dumbbell"], ["kettlebell"]],
+    "tracking": "weight-reps",
+    "qualities": ["post"],
+    "strongRatio": 1.3,
+    "cues": [
+      "Soft knees, push the hips back",
+      "Weight slides down the thighs",
+      "Stop when the hamstrings stop you"
+    ]
+  },
+  {
+    "id": "hipthrust",
+    "name": "Hip thrust",
+    "pattern": "hinge",
+    "muscles": ["glutes", "hams"],
+    "equipment": [["barbell", "bench"], ["dumbbell", "bench"]],
+    "tracking": "weight-reps",
+    "qualities": ["post"],
+    "strongRatio": 1.8,
+    "cues": ["Upper back on the bench edge", "Chin tucked, ribs down", "Squeeze and hold at the top"]
+  },
+  {
+    "id": "backext",
+    "name": "Back extension",
+    "pattern": "hinge",
+    "muscles": ["hams", "glutes", "back"],
+    "equipment": [["backext"]],
+    "tracking": "bodyweight-reps",
+    "qualities": ["post"],
+    "bodyweightShare": 0.5,
+    "cues": [
+      "Hinge at the hips, not the low back",
+      "Squeeze the glutes to rise",
+      "Hug a plate to make it harder"
+    ]
+  },
+  {
+    "id": "nordic",
+    "name": "Nordic curl",
+    "pattern": "hinge",
+    "muscles": ["hams"],
+    "equipment": [[]],
+    "tracking": "bodyweight-reps",
+    "qualities": ["post"],
+    "strongRatio": 0.8,
+    "bodyweightShare": 0.6,
+    "cues": [
+      "Anchor your heels under something solid",
+      "Lower as slowly as you can",
+      "Catch yourself and push back up"
+    ]
+  },
+  {
+    "id": "slrdl",
+    "name": "Single-leg RDL",
+    "pattern": "single",
+    "muscles": ["hams", "glutes"],
+    "equipment": [["dumbbell"], ["kettlebell"], []],
+    "tracking": "weight-reps",
+    "qualities": ["single", "post"],
+    "strongRatio": 1.6,
+    "bodyweightShare": 0.9,
+    "cues": [
+      "Reach the free leg long behind you",
+      "Hips stay square to the floor",
+      "Slow down and own the balance"
+    ]
+  },
+  {
+    "id": "bss",
+    "name": "Bulgarian split squat",
+    "pattern": "single",
+    "muscles": ["quads", "glutes"],
+    "equipment": [["dumbbell", "bench"], ["bench"]],
+    "tracking": "weight-reps",
+    "qualities": ["single", "mob"],
+    "strongRatio": 2.1,
+    "bodyweightShare": 0.85,
+    "cues": [
+      "Back foot laces-down on the bench",
+      "Front shin roughly vertical",
+      "Drop the back knee straight down"
+    ]
+  },
+  {
+    "id": "lunge",
+    "name": "Walking lunge",
+    "pattern": "single",
+    "muscles": ["quads", "glutes"],
+    "equipment": [["dumbbell"], ["kettlebell"], []],
+    "tracking": "weight-reps",
+    "qualities": ["single"],
+    "strongRatio": 2,
+    "bodyweightShare": 0.85,
+    "cues": [
+      "Long step, back knee kisses the floor",
+      "Torso tall",
+      "Push through the front heel"
+    ]
+  },
+  {
+    "id": "stepup",
+    "name": "Step-up",
+    "pattern": "single",
+    "muscles": ["quads", "glutes"],
+    "equipment": [["box"], ["bench"]],
+    "tracking": "weight-reps",
+    "qualities": ["single"],
+    "strongRatio": 2,
+    "bodyweightShare": 1,
+    "cues": ["Whole foot on the box", "Don’t push off the back leg", "Lower under control"]
+  },
+  {
+    "id": "latlunge",
+    "name": "Lateral lunge",
+    "pattern": "single",
+    "muscles": ["quads", "glutes"],
+    "equipment": [[], ["dumbbell"], ["kettlebell"]],
+    "tracking": "weight-reps",
+    "qualities": ["lat", "single", "mob"],
+    "strongRatio": 1.9,
+    "bodyweightShare": 0.85,
+    "cues": [
+      "Step wide, sit back into one hip",
+      "Other leg stays straight",
+      "Push back to centre"
+    ]
+  },
+  {
+    "id": "skatersq",
+    "name": "Skater squat",
+    "pattern": "single",
+    "muscles": ["quads", "glutes"],
+    "equipment": [[]],
+    "tracking": "bodyweight-reps",
+    "qualities": ["single"],
+    "strongRatio": 1.35,
+    "bodyweightShare": 1,
+    "cues": [
+      "Free knee behind you",
+      "Lower until the back knee touches down",
+      "Reach arms forward to balance"
+    ]
+  },
+  {
+    "id": "pistol",
+    "name": "Pistol squat",
+    "pattern": "single",
+    "muscles": ["quads", "glutes"],
+    "equipment": [[]],
+    "tracking": "bodyweight-reps",
+    "qualities": ["single", "mob"],
+    "strongRatio": 1.4,
+    "bodyweightShare": 1,
+    "cues": [
+      "Free leg straight out front",
+      "Sit all the way down under control",
+      "Hold a doorframe at first"
+    ]
+  },
+  {
+    "id": "bench",
+    "name": "Bench press",
+    "pattern": "hpush",
+    "muscles": ["chest", "arms", "shoulders"],
+    "equipment": [["barbell", "bench"]],
+    "tracking": "weight-reps",
+    "strongRatio": 1.25,
+    "mainLift": true,
+    "cues": [
+      "Shoulder blades pinned, slight arch",
+      "Bar to the lower chest",
+      "Drive up and slightly back"
+    ]
+  },
+  {
+    "id": "dbbench",
+    "name": "Dumbbell bench press",
+    "pattern": "hpush",
+    "muscles": ["chest", "arms", "shoulders"],
+    "equipment": [["dumbbell", "bench"]],
+    "tracking": "weight-reps",
+    "strongRatio": 0.45,
+    "perHand": true,
+    "mainLift": true,
+    "cues": [
+      "Elbows about 45° from the body",
+      "Deep stretch at the bottom",
+      "Press the dumbbells together at the top"
+    ]
+  },
+  {
+    "id": "incline",
+    "name": "Incline dumbbell press",
+    "pattern": "hpush",
+    "muscles": ["chest", "shoulders"],
+    "equipment": [["dumbbell", "bench"]],
+    "tracking": "weight-reps",
+    "strongRatio": 0.4,
+    "perHand": true,
+    "cues": ["Bench at about 30°", "Lower to the upper chest", "Keep the shoulder blades back"]
+  },
+  {
+    "id": "pushup",
+    "name": "Push-up",
+    "pattern": "hpush",
+    "muscles": ["chest", "arms", "abs"],
+    "equipment": [[]],
+    "tracking": "bodyweight-reps",
+    "qualities": ["core"],
+    "strongRatio": 1.5,
+    "bodyweightShare": 0.65,
+    "cues": [
+      "Body in one straight line",
+      "Chest touches the floor",
+      "Screw your hands into the floor"
+    ]
+  },
+  {
+    "id": "dip",
+    "name": "Dip",
+    "pattern": "hpush",
+    "muscles": ["chest", "arms"],
+    "equipment": [["dip"]],
+    "tracking": "bodyweight-reps",
+    "strongRatio": 1.5,
+    "bodyweightShare": 0.95,
+    "cues": [
+      "Lean slightly forward",
+      "Lower until shoulders pass the elbows",
+      "Lock out fully"
+    ]
+  },
+  {
+    "id": "fly",
+    "name": "Cable fly",
+    "pattern": "hpush",
+    "muscles": ["chest"],
+    "equipment": [["cable"], ["dumbbell", "bench"]],
+    "tracking": "weight-reps",
+    "cues": [
+      "Soft bend in the elbows",
+      "Hug a big tree",
+      "Squeeze for a second in the middle"
+    ]
+  },
+  {
+    "id": "ohp",
+    "name": "Overhead press",
+    "pattern": "vpush",
+    "muscles": ["shoulders", "arms"],
+    "equipment": [["barbell"]],
+    "tracking": "weight-reps",
+    "qualities": ["core", "shoulder"],
+    "strongRatio": 0.75,
+    "mainLift": true,
+    "cues": [
+      "Squeeze glutes, ribs down",
+      "Head through once the bar passes your face",
+      "Finish with biceps by the ears"
+    ]
+  },
+  {
+    "id": "dbohp",
+    "name": "Dumbbell shoulder press",
+    "pattern": "vpush",
+    "muscles": ["shoulders", "arms"],
+    "equipment": [["dumbbell"]],
+    "tracking": "weight-reps",
+    "qualities": ["shoulder"],
+    "strongRatio": 0.32,
+    "perHand": true,
+    "mainLift": true,
+    "cues": ["Start at chin height", "Press up and slightly in", "Don’t lean back"]
+  },
+  {
+    "id": "lmpress",
+    "name": "Half-kneeling landmine press",
+    "pattern": "vpush",
+    "muscles": ["shoulders", "chest", "abs"],
+    "equipment": [["landmine"]],
+    "tracking": "weight-reps",
+    "qualities": ["rot", "shoulder", "core"],
+    "cues": [
+      "Kneel on the side of the pressing arm",
+      "Press up and across",
+      "Hips stay still"
+    ]
+  },
+  {
+    "id": "latraise",
+    "name": "Lateral raise",
+    "pattern": "vpush",
+    "muscles": ["shoulders"],
+    "equipment": [["dumbbell"], ["cable"], ["band"]],
+    "tracking": "weight-reps",
+    "perHand": true,
+    "cues": ["Lead with the elbows", "Stop at shoulder height", "Lower slowly, no swinging"]
+  },
+  {
+    "id": "row",
+    "name": "Barbell row",
+    "pattern": "hpull",
+    "muscles": ["back", "arms"],
+    "equipment": [["barbell"]],
+    "tracking": "weight-reps",
+    "qualities": ["post", "grip"],
+    "strongRatio": 1,
+    "mainLift": true,
+    "cues": [
+      "Hinge to about 45°",
+      "Pull to the belly button",
+      "Pause with shoulder blades squeezed"
+    ]
+  },
+  {
+    "id": "dbrow",
+    "name": "One-arm dumbbell row",
+    "pattern": "hpull",
+    "muscles": ["back", "arms"],
+    "equipment": [["dumbbell", "bench"], ["dumbbell"]],
+    "tracking": "weight-reps",
+    "qualities": ["grip"],
+    "strongRatio": 0.5,
+    "perHand": true,
+    "cues": ["Flat back, brace on the bench", "Pull the elbow to your hip", "Full stretch at the bottom"]
+  },
+  {
+    "id": "cablerow",
+    "name": "Seated cable row",
+    "pattern": "hpull",
+    "muscles": ["back", "arms"],
+    "equipment": [["cable"]],
+    "tracking": "weight-reps",
+    "strongRatio": 1,
+    "cues": [
+      "Sit tall",
+      "Pull to the lower ribs",
+      "Let the shoulders reach forward under control"
+    ]
+  },
+  {
+    "id": "invrow",
+    "name": "Inverted row",
+    "pattern": "hpull",
+    "muscles": ["back", "arms", "abs"],
+    "equipment": [["rings"], ["barbell", "rack"]],
+    "tracking": "bodyweight-reps",
+    "qualities": ["core"],
+    "strongRatio": 1.2,
+    "bodyweightShare": 0.6,
+    "cues": ["Body straight like a plank", "Chest to the bar or handles", "Lower slowly"]
+  },
+  {
+    "id": "pullup",
+    "name": "Pull-up",
+    "pattern": "vpull",
+    "muscles": ["back", "arms"],
+    "equipment": [["pullup"], ["rings"]],
+    "tracking": "bodyweight-reps",
+    "qualities": ["grip"],
+    "strongRatio": 1.4,
+    "bodyweightShare": 1,
+    "mainLift": true,
+    "cues": [
+      "Start from a dead hang",
+      "Drive the elbows down to your ribs",
+      "Chin over the bar, no kipping"
+    ]
+  },
+  {
+    "id": "chinup",
+    "name": "Chin-up",
+    "pattern": "vpull",
+    "muscles": ["back", "arms"],
+    "equipment": [["pullup"]],
+    "tracking": "bodyweight-reps",
+    "qualities": ["grip"],
+    "strongRatio": 1.45,
+    "bodyweightShare": 1,
+    "mainLift": true,
+    "cues": ["Palms facing you", "Chest to the bar", "Full stretch at the bottom"]
+  },
+  {
+    "id": "pulldown",
+    "name": "Lat pulldown",
+    "pattern": "vpull",
+    "muscles": ["back", "arms"],
+    "equipment": [["cable"]],
+    "tracking": "weight-reps",
+    "strongRatio": 0.95,
+    "cues": ["Slight lean back", "Pull to the top of the chest", "Control it back up"]
+  },
+  {
+    "id": "facepull",
+    "name": "Face pull",
+    "pattern": "shoulder",
+    "muscles": ["shoulders", "back"],
+    "equipment": [["cable"], ["band"]],
+    "tracking": "weight-reps",
+    "qualities": ["shoulder"],
+    "cues": [
+      "Rope to forehead height",
+      "Pull apart and back",
+      "Thumbs point behind you at the end"
+    ]
+  },
+  {
+    "id": "pullapart",
+    "name": "Band pull-apart",
+    "pattern": "shoulder",
+    "muscles": ["shoulders", "back"],
+    "equipment": [["band"]],
+    "tracking": "bodyweight-reps",
+    "qualities": ["shoulder"],
+    "cues": ["Arms straight at chest height", "Pull the band to your chest", "Squeeze the shoulder blades"]
+  },
+  {
+    "id": "curl",
+    "name": "Dumbbell curl",
+    "pattern": "arms",
+    "muscles": ["arms"],
+    "equipment": [["dumbbell"], ["cable"], ["band"]],
+    "tracking": "weight-reps",
+    "perHand": true,
+    "armFocus": "biceps",
+    "cues": ["Elbows pinned at your sides", "Turn the pinky up at the top", "Lower for a slow count of 3"]
+  },
+  {
+    "id": "hammer",
+    "name": "Hammer curl",
+    "pattern": "arms",
+    "muscles": ["arms"],
+    "equipment": [["dumbbell"], ["kettlebell"]],
+    "tracking": "weight-reps",
+    "qualities": ["grip"],
+    "perHand": true,
+    "armFocus": "biceps",
+    "cues": ["Thumbs up the whole way", "No swinging", "Squeeze at the top"]
+  },
+  {
+    "id": "pushdown",
+    "name": "Triceps pushdown",
+    "pattern": "arms",
+    "muscles": ["arms"],
+    "equipment": [["cable"], ["band"]],
+    "tracking": "weight-reps",
+    "armFocus": "triceps",
+    "cues": ["Elbows glued to your sides", "Spread the rope at the bottom", "Only the forearms move"]
+  },
+  {
+    "id": "ohext",
+    "name": "Overhead triceps extension",
+    "pattern": "arms",
+    "muscles": ["arms"],
+    "equipment": [["dumbbell"], ["cable"]],
+    "tracking": "weight-reps",
+    "armFocus": "triceps",
+    "cues": ["Elbows point forward", "Deep stretch behind the head", "Lock out at the top"]
+  },
+  {
+    "id": "calf",
+    "name": "Standing calf raise",
+    "pattern": "calves",
+    "muscles": ["calves"],
+    "equipment": [[], ["dumbbell"]],
+    "tracking": "weight-reps",
+    "qualities": ["single"],
+    "cues": ["Full stretch at the bottom", "Rise as high as you can", "Pause at the top"]
+  },
+  {
+    "id": "tib",
+    "name": "Tibialis raise",
+    "pattern": "calves",
+    "muscles": ["calves"],
+    "equipment": [[]],
+    "tracking": "bodyweight-reps",
+    "qualities": ["single"],
+    "cues": [
+      "Back against a wall, heels forward",
+      "Pull the toes up toward the shins",
+      "Slow on the way down"
+    ]
+  },
+  {
+    "id": "farmer",
+    "name": "Farmer carry",
+    "pattern": "carry",
+    "muscles": ["back", "abs", "arms"],
+    "equipment": [["dumbbell"], ["kettlebell"], ["trapbar"]],
+    "tracking": "time",
+    "qualities": ["grip", "core"],
+    "strongRatio": 0.5,
+    "perHand": true,
+    "strongSeconds": 40,
+    "cues": ["Tall posture, shoulders packed", "Short quick steps", "Don’t let the weights swing"]
+  },
+  {
+    "id": "suitcase",
+    "name": "Suitcase carry",
+    "pattern": "carry",
+    "muscles": ["abs"],
+    "equipment": [["dumbbell"], ["kettlebell"]],
+    "tracking": "time",
+    "qualities": ["lat", "core", "grip"],
+    "strongRatio": 0.35,
+    "strongSeconds": 40,
+    "cues": [
+      "One weight, one side",
+      "Don’t lean toward or away from it",
+      "Walk slow and tall"
+    ]
+  },
+  {
+    "id": "plank",
+    "name": "Plank",
+    "pattern": "core",
+    "muscles": ["abs"],
+    "equipment": [[]],
+    "tracking": "time",
+    "qualities": ["core"],
+    "strongSeconds": 120,
+    "cues": ["Squeeze glutes and quads", "Ribs down", "Push the floor away"]
+  },
+  {
+    "id": "sideplank",
+    "name": "Side plank",
+    "pattern": "core",
+    "muscles": ["abs"],
+    "equipment": [[]],
+    "tracking": "time",
+    "qualities": ["core", "lat"],
+    "strongSeconds": 75,
+    "cues": ["Elbow under shoulder", "Hips high, body in a line", "Keep breathing"]
+  },
+  {
+    "id": "copen",
+    "name": "Copenhagen plank",
+    "pattern": "core",
+    "muscles": ["abs"],
+    "equipment": [["bench"]],
+    "tracking": "time",
+    "qualities": ["lat", "core"],
+    "strongSeconds": 45,
+    "cues": [
+      "Top leg on the bench at the inside of the knee or foot",
+      "Lift the hips into line",
+      "Start with the knee version"
+    ]
+  },
+  {
+    "id": "deadbug",
+    "name": "Dead bug",
+    "pattern": "core",
+    "muscles": ["abs"],
+    "equipment": [[]],
+    "tracking": "bodyweight-reps",
+    "qualities": ["core"],
+    "cues": [
+      "Low back pressed into the floor",
+      "Opposite arm and leg reach long",
+      "Exhale as you reach"
+    ]
+  },
+  {
+    "id": "pallof",
+    "name": "Pallof press",
+    "pattern": "core",
+    "muscles": ["abs"],
+    "equipment": [["cable"], ["band"]],
+    "tracking": "weight-reps",
+    "qualities": ["rot", "core"],
+    "cues": ["Stand side-on to the anchor", "Press straight out and hold", "Don’t let it twist you"]
+  },
+  {
+    "id": "hlr",
+    "name": "Hanging leg raise",
+    "pattern": "core",
+    "muscles": ["abs"],
+    "equipment": [["pullup"]],
+    "tracking": "bodyweight-reps",
+    "qualities": ["core", "grip"],
+    "strongReps": 15,
+    "cues": ["Dead hang, no swinging", "Curl the pelvis up", "Lower slowly"]
+  },
+  {
+    "id": "abwheel",
+    "name": "Ab wheel rollout",
+    "pattern": "core",
+    "muscles": ["abs"],
+    "equipment": [["abwheel"]],
+    "tracking": "bodyweight-reps",
+    "qualities": ["core"],
+    "strongReps": 15,
+    "cues": [
+      "Start on your knees",
+      "Roll out only as far as your back stays flat",
+      "Pull back with the abs, not the hips"
+    ]
+  },
+  {
+    "id": "chop",
+    "name": "Cable woodchop",
+    "pattern": "core",
+    "muscles": ["abs", "shoulders"],
+    "equipment": [["cable"], ["band"]],
+    "tracking": "weight-reps",
+    "qualities": ["rot", "power"],
+    "cues": [
+      "Rotate through the hips, not just the arms",
+      "Arms long",
+      "Control the return"
+    ]
+  },
+  {
+    "id": "boxjump",
+    "name": "Box jump",
+    "pattern": "power",
+    "muscles": ["quads", "glutes"],
+    "equipment": [["box"]],
+    "tracking": "bodyweight-reps",
+    "qualities": ["power"],
+    "cues": ["Quick arm swing", "Land soft and quiet", "Step down, don’t jump down"]
+  },
+  {
+    "id": "broad",
+    "name": "Broad jump",
+    "pattern": "power",
+    "muscles": ["glutes", "hams"],
+    "equipment": [[]],
+    "tracking": "bodyweight-reps",
+    "qualities": ["power", "post"],
+    "cues": ["Load the hips, swing the arms", "Jump out, not up", "Stick the landing"]
+  },
+  {
+    "id": "bound",
+    "name": "Skater bound",
+    "pattern": "power",
+    "muscles": ["glutes", "quads"],
+    "equipment": [[]],
+    "tracking": "bodyweight-reps",
+    "qualities": ["power", "lat", "single"],
+    "cues": [
+      "Push sideways off the outside leg",
+      "Land on one foot and stick it",
+      "Reach the trailing leg behind"
+    ]
+  },
+  {
+    "id": "jumpsq",
+    "name": "Jump squat",
+    "pattern": "power",
+    "muscles": ["quads", "glutes"],
+    "equipment": [[]],
+    "tracking": "bodyweight-reps",
+    "qualities": ["power"],
+    "cues": ["Quarter squat, then explode", "Land softly and reset", "Quality over speed"]
+  },
+  {
+    "id": "swing",
+    "name": "Kettlebell swing",
+    "pattern": "power",
+    "muscles": ["glutes", "hams"],
+    "equipment": [["kettlebell"]],
+    "tracking": "weight-reps",
+    "qualities": ["power", "post", "endur"],
+    "cues": ["Hike the bell back hard", "Snap the hips", "Bell floats to chest height"]
+  },
+  {
+    "id": "mbrot",
+    "name": "Rotational med ball throw",
+    "pattern": "power",
+    "muscles": ["abs", "shoulders"],
+    "equipment": [["medball"]],
+    "tracking": "weight-reps",
+    "qualities": ["power", "rot"],
+    "cues": [
+      "Stand side-on to a wall",
+      "Load the back hip",
+      "Throw with the hips, not the arms"
+    ]
+  },
+  {
+    "id": "slam",
+    "name": "Med ball slam",
+    "pattern": "power",
+    "muscles": ["abs", "back"],
+    "equipment": [["medball"]],
+    "tracking": "weight-reps",
+    "qualities": ["power", "core"],
+    "cues": ["Reach up tall", "Slam with the whole body", "Hinge to pick it up"]
+  },
+  {
+    "id": "rowint",
+    "name": "Rower intervals",
+    "pattern": "cond",
+    "muscles": ["back", "quads"],
+    "equipment": [["rower"]],
+    "tracking": "time",
+    "qualities": ["endur"],
+    "cues": [
+      "Legs, hips, then arms",
+      "Hard for the interval, easy between",
+      "Keep the strokes long"
+    ]
+  },
+  {
+    "id": "bikeint",
+    "name": "Bike sprints",
+    "pattern": "cond",
+    "muscles": ["quads"],
+    "equipment": [["bike"]],
+    "tracking": "time",
+    "qualities": ["endur", "power"],
+    "cues": ["All-out for the work interval", "Spin easy between", "Stay seated"]
+  },
+  {
+    "id": "sled",
+    "name": "Sled push",
+    "pattern": "cond",
+    "muscles": ["quads", "glutes"],
+    "equipment": [["sled"]],
+    "tracking": "time",
+    "qualities": ["power", "endur"],
+    "cues": [
+      "Low body angle",
+      "Drive through the balls of the feet",
+      "Short powerful steps"
+    ]
+  },
+  {
+    "id": "rope",
+    "name": "Jump rope",
+    "pattern": "cond",
+    "muscles": ["calves"],
+    "equipment": [["jumprope"]],
+    "tracking": "time",
+    "qualities": ["endur", "single"],
+    "cues": [
+      "Small hops on the balls of your feet",
+      "Wrists turn the rope",
+      "Stay relaxed"
+    ]
+  },
+  {
+    "id": "burpee",
+    "name": "Burpees",
+    "pattern": "cond",
+    "muscles": ["chest", "quads"],
+    "equipment": [[]],
+    "tracking": "bodyweight-reps",
+    "qualities": ["endur"],
+    "cues": ["Chest to the floor", "Jump and reach overhead", "A steady pace you can hold"]
+  },
+  {
+    "id": "w9090",
+    "name": "90/90 hip switches",
+    "pattern": "mob",
+    "muscles": ["glutes"],
+    "equipment": [[]],
+    "tracking": "time",
+    "qualities": ["mob"],
+    "cues": ["Sit tall", "Rotate both knees side to side", "Hands off the floor if you can"]
+  },
+  {
+    "id": "wgs",
+    "name": "World’s greatest stretch",
+    "pattern": "mob",
+    "muscles": ["glutes", "hams"],
+    "equipment": [[]],
+    "tracking": "time",
+    "qualities": ["mob", "rot"],
+    "cues": ["Deep lunge, elbow to instep", "Rotate and reach to the sky", "Alternate sides"]
+  },
+  {
+    "id": "openbook",
+    "name": "Thoracic open book",
+    "pattern": "mob",
+    "muscles": ["back"],
+    "equipment": [[]],
+    "tracking": "time",
+    "qualities": ["mob", "rot", "shoulder"],
+    "cues": [
+      "Lie on your side, knees stacked",
+      "Open the top arm across",
+      "Follow the hand with your eyes"
+    ]
+  },
+  {
+    "id": "ankle",
+    "name": "Ankle rocks",
+    "pattern": "mob",
+    "muscles": ["calves"],
+    "equipment": [[]],
+    "tracking": "time",
+    "qualities": ["mob", "single"],
+    "cues": ["Half-kneeling, front heel down", "Drive the knee past the toes", "Slow rocks, no bouncing"]
+  },
+  {
+    "id": "passthru",
+    "name": "Band shoulder pass-through",
+    "pattern": "mob",
+    "muscles": ["shoulders"],
+    "equipment": [["band"]],
+    "tracking": "time",
+    "qualities": ["mob", "shoulder"],
+    "cues": [
+      "Wide grip",
+      "Arms straight overhead and behind",
+      "Narrow the grip over time"
+    ]
+  },
+  {
+    "id": "couch",
+    "name": "Couch stretch",
+    "pattern": "mob",
+    "muscles": ["quads"],
+    "equipment": [[]],
+    "tracking": "time",
+    "qualities": ["mob"],
+    "cues": [
+      "Back knee against a wall or bench",
+      "Squeeze the glute",
+      "Stay tall"
+    ]
+  },
+  {
+    "id": "deepsq",
+    "name": "Deep squat hold",
+    "pattern": "mob",
+    "muscles": ["quads", "glutes"],
+    "equipment": [[]],
+    "tracking": "time",
+    "qualities": ["mob"],
+    "cues": ["Heels down", "Elbows push the knees out", "Breathe into the bottom"]
+  }
+]

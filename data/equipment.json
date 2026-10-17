@@ -1,0 +1,23 @@
+[
+  {"id": "barbell", "name": "Barbell & plates"},
+  {"id": "rack", "name": "Squat rack"},
+  {"id": "bench", "name": "Bench"},
+  {"id": "dumbbell", "name": "Dumbbells"},
+  {"id": "kettlebell", "name": "Kettlebells"},
+  {"id": "cable", "name": "Cable machine"},
+  {"id": "pullup", "name": "Pull-up bar"},
+  {"id": "dip", "name": "Dip bars"},
+  {"id": "band", "name": "Resistance bands"},
+  {"id": "trapbar", "name": "Trap bar"},
+  {"id": "landmine", "name": "Landmine"},
+  {"id": "medball", "name": "Medicine ball"},
+  {"id": "box", "name": "Plyo box"},
+  {"id": "legpress", "name": "Leg press"},
+  {"id": "rings", "name": "Rings or TRX"},
+  {"id": "abwheel", "name": "Ab wheel"},
+  {"id": "backext", "name": "Back extension bench"},
+  {"id": "rower", "name": "Rowing machine"},
+  {"id": "bike", "name": "Bike or air bike"},
+  {"id": "jumprope", "name": "Jump rope"},
+  {"id": "sled", "name": "Sled"}
+]

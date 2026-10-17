@@ -39,9 +39,21 @@ The browser keeps only your Google sign-in and, while you're offline or the sign
 
 Open the app in your phone's browser and use *Add to Home Screen* (Safari: Share → Add to Home Screen; Chrome: ⋮ → Install app). It then opens full-screen like an app, with the tabs along the bottom, and the app itself opens even without a connection. During a workout the screen stays on.
 
+## Extending the app
+
+What the coach knows lives in plain JSON files under [`data/`](data/), separate from the code, so you can read it, review it and add to it in a pull request without touching JavaScript. Each file has a schema that explains every field, and a check runs on every pull request.
+
+| Dataset | File | Schema | What it controls |
+| --- | --- | --- | --- |
+| Exercises | [`data/exercises.json`](data/exercises.json) | [`exercises.schema.json`](data/schema/exercises.schema.json) | The exercise library: movement pattern, muscles, equipment options, how sets are logged, strength standards and coaching cues |
+| Sports | [`data/sports.json`](data/sports.json) | [`sports.schema.json`](data/schema/sports.schema.json) | Sports you can cross-train for, and how much each relies on power, single-leg strength, rotation and so on |
+| Equipment | [`data/equipment.json`](data/equipment.json) | [`equipment.schema.json`](data/schema/equipment.schema.json) | Equipment you can tick under *Gear & goals* |
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for how to add an entry.
+
 ## Running it
 
-It's a static page (`index.html`, plus `manifest.webmanifest`, `sw.js` and icons for installing on a phone) with no build step. Open it in a browser, or serve it with GitHub Pages (Settings → Pages → Deploy from branch → `main` / root).
+It's a static page (`index.html`, the exercise library in `data/`, plus `manifest.webmanifest`, `sw.js` and icons for installing on a phone) with no build step. Serve the folder with any static server, for example `python3 -m http.server` and then open http://localhost:8000 (opening `index.html` straight from disk can't load `data/`), or with GitHub Pages (Settings → Pages → Deploy from branch → `main` / root).
 
 ## Google Drive sync
 
