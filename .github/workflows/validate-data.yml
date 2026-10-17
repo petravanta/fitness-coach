@@ -18,7 +18,7 @@ jobs:
           node-version: 20
       - name: Match the schemas
         run: |
-          for d in exercises sports equipment; do
+          for d in exercises sports equipment figures; do
             npx --yes ajv-cli@5 validate --spec=draft2020 --all-errors -s data/schema/$d.schema.json -d data/$d.json
           done
       - name: Check ids and references

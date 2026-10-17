@@ -25,6 +25,7 @@
         "description": "Ways to do it. Each option lists everything it needs (ids from equipment.json); [] means no equipment. The app picks the first option the person has."
       },
       "tracking": {"enum": ["weight-reps", "bodyweight-reps", "time"], "description": "What gets logged for each set."},
+      "figure": {"type": "string", "description": "Id of the drawing in figures.json that shows this exercise. Exercises without one get a drawing for their movement pattern."},
       "qualities": {
         "type": "array", "uniqueItems": true,
         "items": {"enum": ["power", "single", "lat", "rot", "grip", "endur", "mob", "core", "post", "shoulder"]},

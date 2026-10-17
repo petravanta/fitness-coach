@@ -2,24 +2,25 @@
 // Run: node scripts/check-data.js
 const fs = require('fs'), path = require('path');
 const load = (n) => JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', n + '.json'), 'utf8'));
-const exercises = load('exercises'), sports = load('sports'), equipment = load('equipment');
+const exercises = load('exercises'), sports = load('sports'), equipment = load('equipment'), figures = load('figures');
 const errors = [];
 
-for (const [file, list] of [['exercises', exercises], ['sports', sports], ['equipment', equipment]]) {
+for (const [file, list] of [['exercises', exercises], ['sports', sports], ['equipment', equipment], ['figures', figures]]) {
   const seen = new Set();
   for (const x of list) {
     if (seen.has(x.id)) errors.push(`${file}.json: id "${x.id}" is used more than once`);
     seen.add(x.id);
   }
 }
-const eq = new Set(equipment.map((e) => e.id));
+const eq = new Set(equipment.map((e) => e.id)), fig = new Set(figures.map((f) => f.id));
 for (const x of exercises) {
   for (const option of x.equipment) for (const e of option) {
     if (!eq.has(e)) errors.push(`exercises.json: "${x.id}" needs equipment "${e}", which isn't in equipment.json`);
   }
+  if (x.figure && !fig.has(x.figure)) errors.push(`exercises.json: "${x.id}" uses figure "${x.figure}", which isn't in figures.json`);
   if (x.strongReps && x.tracking !== 'bodyweight-reps') errors.push(`exercises.json: "${x.id}" has strongReps but isn't tracked as bodyweight-reps`);
   if (x.strongSeconds && x.tracking !== 'time') errors.push(`exercises.json: "${x.id}" has strongSeconds but isn't tracked as time`);
 }
 
 if (errors.length) { console.error(errors.join('\n')); process.exit(1); }
-console.log(`data ok: ${exercises.length} exercises, ${sports.length} sports, ${equipment.length} equipment`);
+console.log(`data ok: ${exercises.length} exercises, ${sports.length} sports, ${equipment.length} equipment, ${figures.length} figures`);

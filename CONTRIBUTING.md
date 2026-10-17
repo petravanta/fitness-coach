@@ -30,6 +30,10 @@ Here is a complete example:
 }
 ```
 
+## Add or change an exercise drawing
+
+Each exercise can name a drawing with `"figure"`. Drawings live in [`data/figures.json`](data/figures.json) and are explained in [`data/schema/figures.schema.json`](data/schema/figures.schema.json): a stick figure on a 48 × 48 grid (head, limbs as lines of x,y points, and where the hands hold the weight). The app adds the gear the exercise uses, so one drawing works for the barbell and dumbbell versions. Several exercises can share a drawing, and an exercise without one gets a drawing for its movement pattern.
+
 ## Add a sport or a piece of equipment
 
 Same steps, in [`data/sports.json`](data/sports.json) or [`data/equipment.json`](data/equipment.json). A sport rates the qualities it relies on from 1 to 3. The quality ids are explained in the exercises schema.
@@ -41,7 +45,7 @@ Anything you can describe with the existing fields is data. A new movement patte
 ## Checking locally
 
 ```sh
-node scripts/check-data.js     # unique ids, equipment exists
+node scripts/check-data.js     # unique ids, equipment and figures exist
 npx ajv-cli@5 validate --spec=draft2020 -s data/schema/exercises.schema.json -d data/exercises.json
 python3 -m http.server         # then open http://localhost:8000
 ```
