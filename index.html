@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script>try{var t=localStorage.getItem('petravanta.theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Fitness Coach</title>
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
@@ -212,6 +213,7 @@ button,a{touch-action:manipulation}
 .gate{max-width:560px;margin:8vh auto 0}
 .gated nav.tabs{display:none}
 
+.load-error{margin:16px;padding:12px 16px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink)}
 </style>
 </head>
 <body>
@@ -240,6 +242,18 @@ button,a{touch-action:manipulation}
 <div id="toastHost"></div>
 
 <script>
+/* ---------------- Catalog ---------------- */
+// Exercises, sports and equipment live in data/*.json so anyone can review or add to them in a pull request (see CONTRIBUTING.md).
+async function loadCatalog(names){
+  const out={};
+  await Promise.all(names.map(async n=>{const r=await fetch('data/'+n+'.json'); if(!r.ok) throw new Error(n); out[n]=await r.json()}));
+  return out;
+}
+(async()=>{
+const CATALOG=await loadCatalog(['exercises','sports','equipment']).catch(e=>{
+  document.body.insertAdjacentHTML('afterbegin','<p class="load-error" role="alert">Couldn’t load the exercise library. Check your connection and reload.</p>');
+  throw e});
+
 /* ---------------- Library ---------------- */
 const PAT={squat:'Squat',hinge:'Hinge',single:'Single-leg',hpush:'Horizontal push',vpush:'Vertical push',hpull:'Horizontal pull',vpull:'Vertical pull',
   carry:'Carry & grip',core:'Core',power:'Power & jumps',arms:'Arms',calves:'Calves & shins',shoulder:'Shoulder health',cond:'Conditioning',mob:'Mobility'};
@@ -247,24 +261,8 @@ const PAT={squat:'Squat',hinge:'Hinge',single:'Single-leg',hpush:'Horizontal pus
 const SCORED=['squat','hinge','single','hpush','vpush','hpull','vpull','carry','core'];
 const MUS={chest:'Chest',shoulders:'Shoulders',back:'Back',arms:'Arms',abs:'Abs & obliques',glutes:'Glutes',quads:'Quads',hams:'Hamstrings',calves:'Calves'};
 const QUAL={power:'explosive power',single:'single-leg strength',lat:'lateral movement',rot:'rotation',grip:'grip',endur:'endurance',mob:'mobility',core:'trunk stability',post:'posterior chain',shoulder:'shoulder resilience'};
-const SPORTS={
-  skate:{n:'Skating',q:{single:3,lat:3,post:2,core:2,power:1,mob:1}},
-  run:{n:'Running',q:{single:3,post:2,power:2,endur:2,core:1}},
-  cycle:{n:'Cycling',q:{single:2,post:2,core:2,mob:2,endur:1}},
-  racket:{n:'Tennis & racket sports',q:{rot:3,lat:3,power:2,shoulder:2}},
-  ski:{n:'Skiing & snowboarding',q:{single:3,lat:2,core:2,endur:2}},
-  climb:{n:'Climbing',q:{grip:3,shoulder:2,core:2,mob:1}},
-  swim:{n:'Swimming',q:{shoulder:3,core:2,mob:2,endur:1}},
-  soccer:{n:'Soccer',q:{single:3,lat:2,power:2,post:2}},
-  hoops:{n:'Basketball & volleyball',q:{power:3,single:2,lat:2}},
-  hike:{n:'Hiking',q:{single:2,endur:3,grip:1}},
-  fight:{n:'Martial arts',q:{rot:3,power:2,core:2,mob:2}},
-  golf:{n:'Golf',q:{rot:3,mob:3,core:2}},
-  surf:{n:'Surfing & paddling',q:{shoulder:3,core:2,mob:2,single:1}}
-};
-const EQUIP={barbell:'Barbell & plates',rack:'Squat rack',bench:'Bench',dumbbell:'Dumbbells',kettlebell:'Kettlebells',cable:'Cable machine',pullup:'Pull-up bar',
-  dip:'Dip bars',band:'Resistance bands',trapbar:'Trap bar',landmine:'Landmine',medball:'Medicine ball',box:'Plyo box',legpress:'Leg press',rings:'Rings or TRX',
-  abwheel:'Ab wheel',backext:'Back extension bench',rower:'Rowing machine',bike:'Bike or air bike',jumprope:'Jump rope',sled:'Sled'};
+const SPORTS=Object.fromEntries(CATALOG.sports.map(s=>[s.id,{n:s.name,q:s.qualities}]));
+const EQUIP=Object.fromEntries(CATALOG.equipment.map(e=>[e.id,e.name]));
 const TRACK={wr:'Weight × reps',bw:'Bodyweight reps',time:'Time'};
 
 // E(id, name, pattern, muscles (first is primary), equipment options ("a+b|c", "-" = none), tracking, extras)
@@ -272,79 +270,10 @@ const TRACK={wr:'Weight × reps',bw:'Bodyweight reps',time:'Time'};
 // reps/base: reps or seconds that count as strong for bodyweight-only or timed holds
 function E(id,n,p,m,eq,t,o={}){return{id,n,p,m:m.split(' '),eq:eq.split('|').map(s=>s==='-'?[]:s.split('+')),t,q:(o.q||'').split(' ').filter(Boolean),c:o.c||[],
   std:o.std||null,bwf:o.bwf||0,per:!!o.per,main:!!o.main,reps:o.reps||null,base:o.base||null,sub:o.sub||null}}
-const LIB=[
-E('bsquat','Back squat','squat','quads glutes','barbell+rack','wr',{std:1.5,main:1,q:'post',c:['Brace hard before you descend','Knees track over your toes','Drive the floor away']}),
-E('fsquat','Front squat','squat','quads abs','barbell+rack','wr',{std:1.2,main:1,q:'core',c:['Elbows high, chest proud','Sit straight down between your heels','Stay tall out of the bottom']}),
-E('goblet','Goblet squat','squat','quads glutes','dumbbell|kettlebell','wr',{std:.6,q:'mob',c:['Hold the weight at your chest','Elbows inside the knees at the bottom','Pause low, then stand']}),
-E('legpress','Leg press','squat','quads glutes','legpress','wr',{std:2.6,c:['Feet shoulder-width, mid-platform','Lower until your hips start to tuck','Don’t slam the knees straight']}),
-E('dl','Deadlift','hinge','hams glutes back','barbell','wr',{std:2,main:1,q:'post grip',c:['Bar over mid-foot, shins to the bar','Pull the slack out before it leaves the floor','Hips and shoulders rise together']}),
-E('tbdl','Trap bar deadlift','hinge','quads glutes hams','trapbar','wr',{std:2.1,main:1,q:'post power',c:['Stand centred in the handle','Chest up, lats tight','Drive hard through the whole foot']}),
-E('rdl','Romanian deadlift','hinge','hams glutes','barbell|dumbbell|kettlebell','wr',{std:1.3,q:'post',c:['Soft knees, push the hips back','Weight slides down the thighs','Stop when the hamstrings stop you']}),
-E('hipthrust','Hip thrust','hinge','glutes hams','barbell+bench|dumbbell+bench','wr',{std:1.8,q:'post',c:['Upper back on the bench edge','Chin tucked, ribs down','Squeeze and hold at the top']}),
-E('backext','Back extension','hinge','hams glutes back','backext','bw',{bwf:.5,q:'post',c:['Hinge at the hips, not the low back','Squeeze the glutes to rise','Hug a plate to make it harder']}),
-E('nordic','Nordic curl','hinge','hams','-','bw',{bwf:.6,std:.8,q:'post',c:['Anchor your heels under something solid','Lower as slowly as you can','Catch yourself and push back up']}),
-E('slrdl','Single-leg RDL','single','hams glutes','dumbbell|kettlebell|-','wr',{bwf:.9,std:1.6,q:'single post',c:['Reach the free leg long behind you','Hips stay square to the floor','Slow down and own the balance']}),
-E('bss','Bulgarian split squat','single','quads glutes','dumbbell+bench|bench','wr',{bwf:.85,std:2.1,q:'single mob',c:['Back foot laces-down on the bench','Front shin roughly vertical','Drop the back knee straight down']}),
-E('lunge','Walking lunge','single','quads glutes','dumbbell|kettlebell|-','wr',{bwf:.85,std:2,q:'single',c:['Long step, back knee kisses the floor','Torso tall','Push through the front heel']}),
-E('stepup','Step-up','single','quads glutes','box|bench','wr',{bwf:1,std:2,q:'single',c:['Whole foot on the box','Don’t push off the back leg','Lower under control']}),
-E('latlunge','Lateral lunge','single','quads glutes','-|dumbbell|kettlebell','wr',{bwf:.85,std:1.9,q:'lat single mob',c:['Step wide, sit back into one hip','Other leg stays straight','Push back to centre']}),
-E('skatersq','Skater squat','single','quads glutes','-','bw',{bwf:1,std:1.35,q:'single',c:['Free knee behind you','Lower until the back knee touches down','Reach arms forward to balance']}),
-E('pistol','Pistol squat','single','quads glutes','-','bw',{bwf:1,std:1.4,q:'single mob',c:['Free leg straight out front','Sit all the way down under control','Hold a doorframe at first']}),
-E('bench','Bench press','hpush','chest arms shoulders','barbell+bench','wr',{std:1.25,main:1,c:['Shoulder blades pinned, slight arch','Bar to the lower chest','Drive up and slightly back']}),
-E('dbbench','Dumbbell bench press','hpush','chest arms shoulders','dumbbell+bench','wr',{std:.45,per:1,main:1,c:['Elbows about 45° from the body','Deep stretch at the bottom','Press the dumbbells together at the top']}),
-E('incline','Incline dumbbell press','hpush','chest shoulders','dumbbell+bench','wr',{std:.4,per:1,c:['Bench at about 30°','Lower to the upper chest','Keep the shoulder blades back']}),
-E('pushup','Push-up','hpush','chest arms abs','-','bw',{bwf:.65,std:1.5,q:'core',c:['Body in one straight line','Chest touches the floor','Screw your hands into the floor']}),
-E('dip','Dip','hpush','chest arms','dip','bw',{bwf:.95,std:1.5,c:['Lean slightly forward','Lower until shoulders pass the elbows','Lock out fully']}),
-E('fly','Cable fly','hpush','chest','cable|dumbbell+bench','wr',{c:['Soft bend in the elbows','Hug a big tree','Squeeze for a second in the middle']}),
-E('ohp','Overhead press','vpush','shoulders arms','barbell','wr',{std:.75,main:1,q:'core shoulder',c:['Squeeze glutes, ribs down','Head through once the bar passes your face','Finish with biceps by the ears']}),
-E('dbohp','Dumbbell shoulder press','vpush','shoulders arms','dumbbell','wr',{std:.32,per:1,main:1,q:'shoulder',c:['Start at chin height','Press up and slightly in','Don’t lean back']}),
-E('lmpress','Half-kneeling landmine press','vpush','shoulders chest abs','landmine','wr',{q:'rot shoulder core',c:['Kneel on the side of the pressing arm','Press up and across','Hips stay still']}),
-E('latraise','Lateral raise','vpush','shoulders','dumbbell|cable|band','wr',{per:1,c:['Lead with the elbows','Stop at shoulder height','Lower slowly, no swinging']}),
-E('row','Barbell row','hpull','back arms','barbell','wr',{std:1,main:1,q:'post grip',c:['Hinge to about 45°','Pull to the belly button','Pause with shoulder blades squeezed']}),
-E('dbrow','One-arm dumbbell row','hpull','back arms','dumbbell+bench|dumbbell','wr',{std:.5,per:1,q:'grip',c:['Flat back, brace on the bench','Pull the elbow to your hip','Full stretch at the bottom']}),
-E('cablerow','Seated cable row','hpull','back arms','cable','wr',{std:1,c:['Sit tall','Pull to the lower ribs','Let the shoulders reach forward under control']}),
-E('invrow','Inverted row','hpull','back arms abs','rings|barbell+rack','bw',{bwf:.6,std:1.2,q:'core',c:['Body straight like a plank','Chest to the bar or handles','Lower slowly']}),
-E('pullup','Pull-up','vpull','back arms','pullup|rings','bw',{bwf:1,std:1.4,main:1,q:'grip',c:['Start from a dead hang','Drive the elbows down to your ribs','Chin over the bar, no kipping']}),
-E('chinup','Chin-up','vpull','back arms','pullup','bw',{bwf:1,std:1.45,main:1,q:'grip',c:['Palms facing you','Chest to the bar','Full stretch at the bottom']}),
-E('pulldown','Lat pulldown','vpull','back arms','cable','wr',{std:.95,c:['Slight lean back','Pull to the top of the chest','Control it back up']}),
-E('facepull','Face pull','shoulder','shoulders back','cable|band','wr',{q:'shoulder',c:['Rope to forehead height','Pull apart and back','Thumbs point behind you at the end']}),
-E('pullapart','Band pull-apart','shoulder','shoulders back','band','bw',{q:'shoulder',c:['Arms straight at chest height','Pull the band to your chest','Squeeze the shoulder blades']}),
-E('curl','Dumbbell curl','arms','arms','dumbbell|cable|band','wr',{per:1,sub:'bi',c:['Elbows pinned at your sides','Turn the pinky up at the top','Lower for a slow count of 3']}),
-E('hammer','Hammer curl','arms','arms','dumbbell|kettlebell','wr',{per:1,sub:'bi',q:'grip',c:['Thumbs up the whole way','No swinging','Squeeze at the top']}),
-E('pushdown','Triceps pushdown','arms','arms','cable|band','wr',{sub:'tri',c:['Elbows glued to your sides','Spread the rope at the bottom','Only the forearms move']}),
-E('ohext','Overhead triceps extension','arms','arms','dumbbell|cable','wr',{sub:'tri',c:['Elbows point forward','Deep stretch behind the head','Lock out at the top']}),
-E('calf','Standing calf raise','calves','calves','-|dumbbell','wr',{q:'single',c:['Full stretch at the bottom','Rise as high as you can','Pause at the top']}),
-E('tib','Tibialis raise','calves','calves','-','bw',{q:'single',c:['Back against a wall, heels forward','Pull the toes up toward the shins','Slow on the way down']}),
-E('farmer','Farmer carry','carry','back abs arms','dumbbell|kettlebell|trapbar','time',{std:.5,per:1,base:40,q:'grip core',c:['Tall posture, shoulders packed','Short quick steps','Don’t let the weights swing']}),
-E('suitcase','Suitcase carry','carry','abs','dumbbell|kettlebell','time',{std:.35,base:40,q:'lat core grip',c:['One weight, one side','Don’t lean toward or away from it','Walk slow and tall']}),
-E('plank','Plank','core','abs','-','time',{base:120,q:'core',c:['Squeeze glutes and quads','Ribs down','Push the floor away']}),
-E('sideplank','Side plank','core','abs','-','time',{base:75,q:'core lat',c:['Elbow under shoulder','Hips high, body in a line','Keep breathing']}),
-E('copen','Copenhagen plank','core','abs','bench','time',{base:45,q:'lat core',c:['Top leg on the bench at the inside of the knee or foot','Lift the hips into line','Start with the knee version']}),
-E('deadbug','Dead bug','core','abs','-','bw',{q:'core',c:['Low back pressed into the floor','Opposite arm and leg reach long','Exhale as you reach']}),
-E('pallof','Pallof press','core','abs','cable|band','wr',{q:'rot core',c:['Stand side-on to the anchor','Press straight out and hold','Don’t let it twist you']}),
-E('hlr','Hanging leg raise','core','abs','pullup','bw',{reps:15,q:'core grip',c:['Dead hang, no swinging','Curl the pelvis up','Lower slowly']}),
-E('abwheel','Ab wheel rollout','core','abs','abwheel','bw',{reps:15,q:'core',c:['Start on your knees','Roll out only as far as your back stays flat','Pull back with the abs, not the hips']}),
-E('chop','Cable woodchop','core','abs shoulders','cable|band','wr',{q:'rot power',c:['Rotate through the hips, not just the arms','Arms long','Control the return']}),
-E('boxjump','Box jump','power','quads glutes','box','bw',{q:'power',c:['Quick arm swing','Land soft and quiet','Step down, don’t jump down']}),
-E('broad','Broad jump','power','glutes hams','-','bw',{q:'power post',c:['Load the hips, swing the arms','Jump out, not up','Stick the landing']}),
-E('bound','Skater bound','power','glutes quads','-','bw',{q:'power lat single',c:['Push sideways off the outside leg','Land on one foot and stick it','Reach the trailing leg behind']}),
-E('jumpsq','Jump squat','power','quads glutes','-','bw',{q:'power',c:['Quarter squat, then explode','Land softly and reset','Quality over speed']}),
-E('swing','Kettlebell swing','power','glutes hams','kettlebell','wr',{q:'power post endur',c:['Hike the bell back hard','Snap the hips','Bell floats to chest height']}),
-E('mbrot','Rotational med ball throw','power','abs shoulders','medball','wr',{q:'power rot',c:['Stand side-on to a wall','Load the back hip','Throw with the hips, not the arms']}),
-E('slam','Med ball slam','power','abs back','medball','wr',{q:'power core',c:['Reach up tall','Slam with the whole body','Hinge to pick it up']}),
-E('rowint','Rower intervals','cond','back quads','rower','time',{q:'endur',c:['Legs, hips, then arms','Hard for the interval, easy between','Keep the strokes long']}),
-E('bikeint','Bike sprints','cond','quads','bike','time',{q:'endur power',c:['All-out for the work interval','Spin easy between','Stay seated']}),
-E('sled','Sled push','cond','quads glutes','sled','time',{q:'power endur',c:['Low body angle','Drive through the balls of the feet','Short powerful steps']}),
-E('rope','Jump rope','cond','calves','jumprope','time',{q:'endur single',c:['Small hops on the balls of your feet','Wrists turn the rope','Stay relaxed']}),
-E('burpee','Burpees','cond','chest quads','-','bw',{q:'endur',c:['Chest to the floor','Jump and reach overhead','A steady pace you can hold']}),
-E('w9090','90/90 hip switches','mob','glutes','-','time',{q:'mob',c:['Sit tall','Rotate both knees side to side','Hands off the floor if you can']}),
-E('wgs','World’s greatest stretch','mob','glutes hams','-','time',{q:'mob rot',c:['Deep lunge, elbow to instep','Rotate and reach to the sky','Alternate sides']}),
-E('openbook','Thoracic open book','mob','back','-','time',{q:'mob rot shoulder',c:['Lie on your side, knees stacked','Open the top arm across','Follow the hand with your eyes']}),
-E('ankle','Ankle rocks','mob','calves','-','time',{q:'mob single',c:['Half-kneeling, front heel down','Drive the knee past the toes','Slow rocks, no bouncing']}),
-E('passthru','Band shoulder pass-through','mob','shoulders','band','time',{q:'mob shoulder',c:['Wide grip','Arms straight overhead and behind','Narrow the grip over time']}),
-E('couch','Couch stretch','mob','quads','-','time',{q:'mob',c:['Back knee against a wall or bench','Squeeze the glute','Stay tall']}),
-E('deepsq','Deep squat hold','mob','quads glutes','-','time',{q:'mob',c:['Heels down','Elbows push the knees out','Breathe into the bottom']})
-];
+// Exercises come from data/exercises.json; the readable field names there map onto the short ones the app uses
+const TRACK_ID={'weight-reps':'wr','bodyweight-reps':'bw',time:'time'}, ARM_ID={biceps:'bi',triceps:'tri'};
+const LIB=CATALOG.exercises.map(x=>E(x.id,x.name,x.pattern,x.muscles.join(' '),x.equipment.map(o=>o.length?o.join('+'):'-').join('|'),TRACK_ID[x.tracking],
+  {std:x.strongRatio,bwf:x.bodyweightShare,per:x.perHand,main:x.mainLift,reps:x.strongReps,base:x.strongSeconds,sub:ARM_ID[x.armFocus],q:(x.qualities||[]).join(' '),c:x.cues}));
 let EX=LIB, BYID={};
 function rebuildLibrary(){
   EX=LIB.concat((state.profile.customEx||[]).map(c=>Object.assign(E(c.id,c.n,c.p,(c.m&&c.m.length?c.m:['abs']).join(' '),c.eq&&c.eq.length?c.eq.join('+'):'-',c.t,{c:c.c||[],sub:c.sub}),{custom:true})));
@@ -1391,7 +1320,9 @@ document.addEventListener('visibilitychange',async()=>{
   if(await store.refresh()){useData(store.data); render()}
 });
 if('serviceWorker' in navigator&&/^(petravanta\.github\.io|localhost)$/.test(location.hostname)) navigator.serviceWorker.register('sw.js').catch(()=>{});
+})();
 </script>
 <script src="https://petravanta.github.io/general/shared/hub-link.js" defer></script>
+<script src="https://petravanta.github.io/general/shared/theme-switch.js" defer></script>
 </body>
 </html>
