@@ -128,7 +128,23 @@ textarea{resize:vertical}
 .role{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--accent)}
 .role.warm{color:var(--lv-dev)} .role.power{color:var(--lv-learn)} .role.sport{color:var(--lv-conf)} .role.cond{color:var(--muted)}
 .exl{display:flex;flex-direction:column;gap:10px}
-.ex{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:2px 10px;align-items:start}
+.ex{display:grid;grid-template-columns:auto 44px minmax(0,1fr) auto;gap:2px 10px;align-items:start}
+.ex .figbtn{grid-row:span 3;background:var(--sunk);border:0;border-radius:10px;padding:2px;width:44px;height:44px}
+.ex .dose,.ex .setrows,.ex .sug{grid-column:3/span 2!important}
+.fig{display:block;width:100%;height:100%;overflow:visible}
+.fig .fb{fill:none;stroke:var(--ink);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.fig .fh{fill:var(--ink)}
+.fig .fl{stroke:var(--line);stroke-width:1}
+.fig .sc{fill:none;stroke:var(--faint);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.fig .dash{stroke-dasharray:2 2}
+.fig .gl{fill:none;stroke:var(--accent);stroke-width:1.6;stroke-linecap:round}
+.fig .gf{fill:var(--accent)}
+.fig .gp{fill:none;stroke:var(--accent);stroke-width:2}
+.fig .gb{fill:none;stroke:var(--accent);stroke-width:1.4;stroke-dasharray:2 1.6}
+.figbox{flex:none;width:40px;height:40px;background:var(--sunk);border-radius:8px;padding:2px}
+.runhead{display:flex;gap:14px;align-items:center}
+.runhead .figbox{width:72px;height:72px;border-radius:14px;padding:4px}
+.drawerfig{width:96px;height:96px;background:var(--sunk);border-radius:16px;padding:6px;margin-bottom:8px}
 .ex .tag{font-family:var(--f-mono);font-size:12px;color:var(--faint);padding-top:3px;min-width:20px}
 .ex .name{font-weight:700;font-size:16px;background:none;border:0;padding:0;text-align:left;color:var(--ink)}
 .ex .name:hover{text-decoration:underline;text-decoration-color:var(--accent)}
@@ -195,9 +211,10 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 #pickq{width:100%;font-size:16px}
 .picklist{display:flex;flex-direction:column}
 .pickhead{margin:14px 0 4px}
-.pickrow{display:flex;flex-direction:column;gap:2px;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:10px 4px;min-height:52px}
+.pickrow{display:grid;grid-template-columns:40px minmax(0,1fr);gap:2px 12px;align-items:center;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:10px 4px;min-height:52px}
 .pickrow:hover{background:var(--sunk)}
 .pickrow .nm{font-weight:600}
+.pickrow .figbox{grid-row:span 2}
 .runitem{display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--line)}
 .runitem .runrow{flex:1;border-bottom:0}
 @media (max-width:640px){.setsctl .btn{min-width:40px;min-height:40px}}
@@ -221,7 +238,7 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 .chart .dot{fill:var(--accent);stroke:var(--surface);stroke-width:2}
 .chart .cross{stroke:var(--muted);stroke-width:1;stroke-dasharray:3 3}
 .tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--bg);border-radius:8px;padding:6px 10px;font-size:12px;white-space:nowrap;transform:translate(-50%,-110%)}
-.exrow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.exrow{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
 .exrow:last-child{border-bottom:0}
 .exrow .nm{background:none;border:0;padding:0;text-align:left;font-weight:600;color:var(--ink)}
 .star{background:none;border:0;font-size:20px;line-height:1;color:var(--faint);padding:2px}
@@ -253,7 +270,7 @@ button,a{touch-action:manipulation}
 .runlist{display:flex;flex-direction:column}
 .runrow{display:grid;grid-template-columns:32px minmax(0,1fr) auto;gap:10px;align-items:center;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:12px 4px;min-height:52px}
 .runrow .tag{font-family:var(--f-mono);font-size:12px;color:var(--faint)}
-.runrow .nm{font-weight:600}
+.runrow .nm{font-weight:600;display:flex;align-items:center;gap:10px}
 .runrow.cur{background:var(--accent-soft);border-radius:8px}
 .runrow .ok{color:var(--lv-conf);font-weight:600}
 .gate{max-width:560px;margin:8vh auto 0}
@@ -296,7 +313,7 @@ async function loadCatalog(names){
   return out;
 }
 (async()=>{
-const CATALOG=await loadCatalog(['exercises','sports','equipment']).catch(e=>{
+const CATALOG=await loadCatalog(['exercises','sports','equipment','figures']).catch(e=>{
   document.body.insertAdjacentHTML('afterbegin','<p class="load-error" role="alert">Couldn’t load the exercise library. Check your connection and reload.</p>');
   throw e});
 
@@ -315,12 +332,28 @@ const TRACK={wr:'Weight × reps',bw:'Bodyweight reps',time:'Time'};
 // std: estimated-max ÷ bodyweight that counts as "strong" (score 100); bwf: share of bodyweight moved; per: weight is per hand;
 // reps/base: reps or seconds that count as strong for bodyweight-only or timed holds
 function E(id,n,p,m,eq,t,o={}){return{id,n,p,m:m.split(' '),eq:eq.split('|').map(s=>s==='-'?[]:s.split('+')),t,q:(o.q||'').split(' ').filter(Boolean),c:o.c||[],
-  std:o.std||null,bwf:o.bwf||0,per:!!o.per,main:!!o.main,reps:o.reps||null,base:o.base||null,sub:o.sub||null}}
+  std:o.std||null,bwf:o.bwf||0,per:!!o.per,main:!!o.main,reps:o.reps||null,base:o.base||null,sub:o.sub||null,fig:o.fig||null}}
 // Exercises come from data/exercises.json; the readable field names there map onto the short ones the app uses
 const TRACK_ID={'weight-reps':'wr','bodyweight-reps':'bw',time:'time'}, ARM_ID={biceps:'bi',triceps:'tri'};
 const LIB=CATALOG.exercises.map(x=>E(x.id,x.name,x.pattern,x.muscles.join(' '),x.equipment.map(o=>o.length?o.join('+'):'-').join('|'),TRACK_ID[x.tracking],
-  {std:x.strongRatio,bwf:x.bodyweightShare,per:x.perHand,main:x.mainLift,reps:x.strongReps,base:x.strongSeconds,sub:ARM_ID[x.armFocus],q:(x.qualities||[]).join(' '),c:x.cues}));
+  {std:x.strongRatio,bwf:x.bodyweightShare,per:x.perHand,main:x.mainLift,reps:x.strongReps,base:x.strongSeconds,sub:ARM_ID[x.armFocus],fig:x.figure,q:(x.qualities||[]).join(' '),c:x.cues}));
 let EX=LIB, BYID={};
+/* ----- Exercise figures: stick figures from data/figures.json, with the gear the exercise uses drawn at the hands ----- */
+const FIG=Object.fromEntries(CATALOG.figures.map(f=>[f.id,f]));
+const FIG_BY_PAT={squat:'goblet',hinge:'hinge',single:'lunge',hpush:'pushup',vpush:'press',hpull:'row',vpull:'pullup',carry:'farmer',core:'plank',power:'jump',arms:'curl',calves:'calf',shoulder:'facepull',cond:'burpee',mob:'stretch'};
+const FIG_GEAR=['barbell','dumbbell','kettlebell','medball','cable','band'];
+function figure(x,cls='fig'){
+  const f=FIG[x.fig]||FIG[FIG_BY_PAT[x.p]]; if(!f) return '';
+  const h=has(), opts=[...x.eq.filter(o=>o.every(e=>h.has(e))),...x.eq], g=(()=>{for(const o of opts) for(const k of FIG_GEAR) if(o.includes(k)) return k; return null})();
+  const H=f.hold||[], A=f.anchor||[46,3]; let gear='';
+  if(g==='barbell'&&H[0]) gear=f.gear==='bar-over'&&H[1]?`<path d="M${H[0][0]-8} ${H[0][1]}H${H[1][0]+8}" class="gl"/><rect x="${H[0][0]-10}" y="${H[0][1]-4}" width="3" height="8" rx="1" class="gf"/><rect x="${H[1][0]+7}" y="${H[1][1]-4}" width="3" height="8" rx="1" class="gf"/>`
+    :`<circle cx="${H[0][0]}" cy="${H[0][1]}" r="5" class="gp"/><circle cx="${H[0][0]}" cy="${H[0][1]}" r="1.3" class="gf"/>`;
+  else if(g==='dumbbell') gear=H.map(([a,b])=>`<path d="M${a-3.5} ${b}H${a+3.5}" class="gl"/><rect x="${a-5.5}" y="${b-2.5}" width="2.4" height="5" rx=".8" class="gf"/><rect x="${a+3.1}" y="${b-2.5}" width="2.4" height="5" rx=".8" class="gf"/>`).join('');
+  else if(g==='kettlebell'&&H[0]){const [a,b]=H[0]; gear=`<path d="M${a-2.2} ${b+2}a2.2 2.4 0 0 1 4.4 0" class="gl"/><circle cx="${a}" cy="${b+5}" r="3.4" class="gf"/>`}
+  else if(g==='medball'&&H[0]) gear=`<circle cx="${H[0][0]}" cy="${H[0][1]}" r="4.2" class="gf"/>`;
+  else if((g==='cable'||g==='band')&&H[0]) gear=f.gear==='band-between'&&H[1]?`<path d="M${H[0][0]} ${H[0][1]}H${H[1][0]}" class="gb"/>`:`<path d="M${H[0][0]} ${H[0][1]}L${A[0]} ${A[1]}" class="gb"/>${g==='cable'?`<circle cx="${A[0]}" cy="${A[1]}" r="1.6" class="gf"/>`:''}`;
+  return `<svg class="${cls}" viewBox="0 0 48 48" aria-hidden="true"><path d="M2 45.5H46" class="fl"/>${(f.scene||[]).map(d=>`<path d="${d}" class="sc"/>`).join('')}${(f.dashed||[]).map(d=>`<path d="${d}" class="sc dash"/>`).join('')}${f.lines.map(l=>`<polyline points="${l}" class="fb"/>`).join('')}<circle cx="${f.head[0]}" cy="${f.head[1]}" r="3.6" class="fh"/>${gear}</svg>`;
+}
 function rebuildLibrary(){
   EX=LIB.concat((state.profile.customEx||[]).map(c=>Object.assign(E(c.id,c.n,c.p,(c.m&&c.m.length?c.m:['abs']).join(' '),c.eq&&c.eq.length?c.eq.join('+'):'-',c.t,{c:c.c||[],sub:c.sub}),{custom:true})));
   BYID={}; EX.forEach(x=>BYID[x.id]=x);
@@ -746,7 +779,7 @@ function pickRows(){
   list=list.map(x=>({x,t:tier(x),f:fav.includes(x.id)?0:1})).sort((a,b)=>a.t-b.t||a.f-b.f||a.x.n.localeCompare(b.x.n));
   let last=-1;
   return list.map(({x,t})=>{const L=lastEntry(x.id), hd=t!==last?`<h3 class="pickhead">${heads[t]}</h3>`:''; last=t;
-    return hd+`<button class="pickrow" data-pick="${x.id}"><span class="nm">${esc(x.n)}${fav.includes(x.id)?' <span style="color:var(--accent)">★</span>':''}</span>
+    return hd+`<button class="pickrow" data-pick="${x.id}"><span class="figbox">${figure(x)}</span><span class="nm">${esc(x.n)}${fav.includes(x.id)?' <span style="color:var(--accent)">★</span>':''}</span>
       <span class="small muted">${esc(PAT[x.p])} · ${x.m.map(m=>MUS[m]).filter(Boolean).join(', ')}${L?' · last '+esc(setTxt(x,L.best)):''}${avail(x,h)?'':' · needs '+esc(eqNeed(x))}</span></button>`}).join('')||'<p class="empty">No exercises match.</p>';
 }
 function applyPick(id){
@@ -972,7 +1005,7 @@ function viewToday(){
     return `<article class="block"${b.role==='warm'?'':` data-dragitem="${bi}"`}><div class="slot"><b>${Math.round(blockSecs(b)/60)}</b><span>min</span></div>
       <div class="blkhead"><span class="role ${b.role}">${ROLE_NAME[b.role]}${ss?' · superset':''}</span>${b.role==='warm'?'':setsCtl(b,bi,'psets')+grip}</div>
       <div class="exl" style="grid-column:2">${b.items.map((it,ii)=>{const x=BYID[it.ex], sg=b.role==='warm'?null:suggest(x,it.d);
-        return `<div class="ex"><span class="tag">${letter}${ss||b.role==='warm'?ii+1:''}</span><button class="name" data-open="${x.id}" data-at="${bi}:${ii}">${esc(x.n)}${p.favorites.includes(x.id)?' <span style="color:var(--accent)">★</span>':''} <span class="more" aria-hidden="true">›</span></button>
+        return `<div class="ex"><span class="tag">${letter}${ss||b.role==='warm'?ii+1:''}</span><button class="figbtn" data-open="${x.id}" data-at="${bi}:${ii}" aria-label="${esc(x.n)} details">${figure(x)}</button><button class="name" data-open="${x.id}" data-at="${bi}:${ii}">${esc(x.n)}${p.favorites.includes(x.id)?' <span style="color:var(--accent)">★</span>':''} <span class="more" aria-hidden="true">›</span></button>
           <span class="exbtns"><button class="btn sm ghost" data-swap="${bi}:${ii}" title="Swap for another exercise">Swap</button><button class="btn sm ghost xbtn" data-rmitem="${bi}:${ii}" aria-label="Remove ${esc(x.n)}" title="Remove">×</button></span>
           <span class="dose mono">${esc(doseTxt(x,it.d,ss?(ii===b.items.length-1?b.rest:0):b.rest))}</span>
           ${b.role==='warm'?'':`<span class="setrows">${Array.from({length:it.d.sets},(_,s)=>`<span><i>${s+1}</i>${esc(targetTxt(x,it.d,sg))}</span>`).join('')}</span>`}
@@ -1031,7 +1064,7 @@ function viewRun(){
   const upcoming=[]; for(let j=A.k+1;j<A.steps.length&&upcoming.length<3;j++){if(!isOpen(j)) continue; const n=curItem(j).x.n; if(n!==x.n&&!upcoming.includes(n)) upcoming.push(n)}
   return `<div class="stack">${bar}<section class="runcard">
     <div class="row" style="justify-content:space-between"><span class="role ${c.b.role}">${esc(label)}</span><span class="small muted">${setN}</span></div>
-    <button class="big-name" data-open="${x.id}">${esc(x.n)}</button>
+    <div class="runhead"><span class="figbox">${figure(x)}</span><button class="big-name" data-open="${x.id}">${esc(x.n)}</button></div>
     <div class="target">Target: ${esc(target)}${x.per&&x.t==='wr'?' <span class="small muted">(weight per hand)</span>':''}</div>
     ${sg.note&&c.b.role!=='warm'?`<p class="small muted">${esc(sg.note)}</p>`:''}
     <div class="steppers">${inputs}</div>
@@ -1133,7 +1166,7 @@ function viewExercises(){
   let list=EX.filter(x=>exFilter==='all'||x.p===exFilter);
   if(exShow==='avail') list=list.filter(x=>avail(x,h)); if(exShow==='fav') list=list.filter(x=>p.favorites.includes(x.id));
   const rows=list.map(x=>{const ok=avail(x,h);
-    return `<div class="exrow"><button class="star" data-fav="${x.id}" aria-pressed="${p.favorites.includes(x.id)}" aria-label="Favorite">${p.favorites.includes(x.id)?'★':'☆'}</button>
+    return `<div class="exrow"><span class="figbox">${figure(x)}</span><button class="star" data-fav="${x.id}" aria-pressed="${p.favorites.includes(x.id)}" aria-label="Favorite">${p.favorites.includes(x.id)?'★':'☆'}</button>
       <div><button class="nm" data-open="${x.id}">${esc(x.n)}</button>${x.custom?' <span class="pill">yours</span>':''}<div class="needs">${esc(PAT[x.p])} · ${x.m.map(m=>MUS[m]).filter(Boolean).join(', ')}${ok?'':' · needs '+esc(eqNeed(x))}</div></div>
       <span class="small muted">${esc(TRACK[x.t])}</span></div>`}).join('');
   return `<div class="stack">
@@ -1210,7 +1243,7 @@ function renderDrawer(){
     host.innerHTML=`<div class="scrim" data-close="1"></div><aside class="drawer" role="dialog" aria-label="Exercises in this workout"><button class="x" data-close="1" aria-label="Close">×</button>
       <h2>This workout</h2><div class="runlist" data-dragkind="run">${active.plan.blocks.map((bl,b)=>`<div class="rungroup"${bl.role==='warm'?'':` data-dragitem="${b}"`}><div class="runrows">${exList().filter(e=>e.b===b).map(e=>{const it=active.plan.blocks[e.b].items[e.i], x=BYID[it.ex], done=e.steps.filter(j=>active.log[j]).length,
         skipped=e.steps.every(j=>active.steps[j].skip||active.log[j])&&e.steps.some(j=>active.steps[j].skip), cur=active.phase!=='done'&&active.steps[active.k]&&active.steps[active.k].b===e.b&&active.steps[active.k].i===e.i;
-        return `<div class="runitem"><button class="runrow${cur?' cur':''}" data-goex="${e.b}:${e.i}"><span class="tag">${exTag(e.b,e.i)}</span><span class="nm">${esc(x.n)}</span>
+        return `<div class="runitem"><button class="runrow${cur?' cur':''}" data-goex="${e.b}:${e.i}"><span class="tag">${exTag(e.b,e.i)}</span><span class="nm"><span class="figbox">${figure(x)}</span>${esc(x.n)}</span>
           <span class="small ${done===e.steps.length?'ok':'muted'}">${skipped?'Skipped':done===e.steps.length?'Done ✓':`${done}/${e.steps.length} sets`}</span></button></div>`}).join('')}</div>${bl.role==='warm'?'':grip}</div>`).join('')}</div>
       <div class="row"><button class="btn sm" data-act="addExRun">+ Add exercise</button></div>
       <p class="small muted">Tap an exercise to jump to it. Drag the handle to change the order (supersets move together). You can come back to anything you skip.</p></aside>`;
@@ -1261,7 +1294,7 @@ function renderDrawer(){
         ${sg&&sg.note?`<p class="small muted">${esc(sg.note)}</p>`:''}
         <div class="row"><button class="btn sm" data-swap="${bi}:${ii}">Swap</button><button class="btn sm ghost" data-rmitem="${bi}:${ii}">Remove from plan</button></div></div>`}}
   host.innerHTML=`<div class="scrim" data-close="1"></div><aside class="drawer" role="dialog" aria-label="${esc(x.n)}"><button class="x" data-close="1" aria-label="Close">×</button>
-    <div><div class="role">${esc(PAT[x.p])}</div><h2>${esc(x.n)}</h2><p class="small muted">${x.m.map(m=>MUS[m]).filter(Boolean).join(', ')}</p></div>
+    <div><div class="drawerfig">${figure(x)}</div><div class="role">${esc(PAT[x.p])}</div><h2>${esc(x.n)}</h2><p class="small muted">${x.m.map(m=>MUS[m]).filter(Boolean).join(', ')}</p></div>
     ${planned}
     <div class="row"><button class="btn sm${fav?' primary':''}" data-fav="${x.id}">${fav?'★ Favorite':'☆ Add to favorites'}</button></div>
     ${x.c.length?`<div><h3>Cues</h3><ul>${x.c.map(q=>`<li>${esc(q)}</li>`).join('')}</ul></div>`:''}

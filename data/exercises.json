@@ -6,6 +6,7 @@
     "muscles": ["quads", "glutes"],
     "equipment": [["barbell", "rack"]],
     "tracking": "weight-reps",
+    "figure": "backsquat",
     "qualities": ["post"],
     "strongRatio": 1.5,
     "mainLift": true,
@@ -18,6 +19,7 @@
     "muscles": ["quads", "abs"],
     "equipment": [["barbell", "rack"]],
     "tracking": "weight-reps",
+    "figure": "frontsquat",
     "qualities": ["core"],
     "strongRatio": 1.2,
     "mainLift": true,
@@ -34,6 +36,7 @@
     "muscles": ["quads", "glutes"],
     "equipment": [["dumbbell"], ["kettlebell"]],
     "tracking": "weight-reps",
+    "figure": "goblet",
     "qualities": ["mob"],
     "strongRatio": 0.6,
     "cues": [
@@ -49,6 +52,7 @@
     "muscles": ["quads", "glutes"],
     "equipment": [["legpress"]],
     "tracking": "weight-reps",
+    "figure": "legpress",
     "strongRatio": 2.6,
     "cues": [
       "Feet shoulder-width, mid-platform",
@@ -63,6 +67,7 @@
     "muscles": ["hams", "glutes", "back"],
     "equipment": [["barbell"]],
     "tracking": "weight-reps",
+    "figure": "hinge",
     "qualities": ["post", "grip"],
     "strongRatio": 2,
     "mainLift": true,
@@ -79,6 +84,7 @@
     "muscles": ["quads", "glutes", "hams"],
     "equipment": [["trapbar"]],
     "tracking": "weight-reps",
+    "figure": "trapbar",
     "qualities": ["post", "power"],
     "strongRatio": 2.1,
     "mainLift": true,
@@ -95,6 +101,7 @@
     "muscles": ["hams", "glutes"],
     "equipment": [["barbell"], ["dumbbell"], ["kettlebell"]],
     "tracking": "weight-reps",
+    "figure": "hinge",
     "qualities": ["post"],
     "strongRatio": 1.3,
     "cues": [
@@ -110,6 +117,7 @@
     "muscles": ["glutes", "hams"],
     "equipment": [["barbell", "bench"], ["dumbbell", "bench"]],
     "tracking": "weight-reps",
+    "figure": "hipthrust",
     "qualities": ["post"],
     "strongRatio": 1.8,
     "cues": ["Upper back on the bench edge", "Chin tucked, ribs down", "Squeeze and hold at the top"]
@@ -121,6 +129,7 @@
     "muscles": ["hams", "glutes", "back"],
     "equipment": [["backext"]],
     "tracking": "bodyweight-reps",
+    "figure": "backext",
     "qualities": ["post"],
     "bodyweightShare": 0.5,
     "cues": [
@@ -136,6 +145,7 @@
     "muscles": ["hams"],
     "equipment": [[]],
     "tracking": "bodyweight-reps",
+    "figure": "nordic",
     "qualities": ["post"],
     "strongRatio": 0.8,
     "bodyweightShare": 0.6,
@@ -152,6 +162,7 @@
     "muscles": ["hams", "glutes"],
     "equipment": [["dumbbell"], ["kettlebell"], []],
     "tracking": "weight-reps",
+    "figure": "slrdl",
     "qualities": ["single", "post"],
     "strongRatio": 1.6,
     "bodyweightShare": 0.9,
@@ -168,6 +179,7 @@
     "muscles": ["quads", "glutes"],
     "equipment": [["dumbbell", "bench"], ["bench"]],
     "tracking": "weight-reps",
+    "figure": "splitsquat",
     "qualities": ["single", "mob"],
     "strongRatio": 2.1,
     "bodyweightShare": 0.85,
@@ -184,6 +196,7 @@
     "muscles": ["quads", "glutes"],
     "equipment": [["dumbbell"], ["kettlebell"], []],
     "tracking": "weight-reps",
+    "figure": "lunge",
     "qualities": ["single"],
     "strongRatio": 2,
     "bodyweightShare": 0.85,
@@ -200,6 +213,7 @@
     "muscles": ["quads", "glutes"],
     "equipment": [["box"], ["bench"]],
     "tracking": "weight-reps",
+    "figure": "stepup",
     "qualities": ["single"],
     "strongRatio": 2,
     "bodyweightShare": 1,
@@ -212,6 +226,7 @@
     "muscles": ["quads", "glutes"],
     "equipment": [[], ["dumbbell"], ["kettlebell"]],
     "tracking": "weight-reps",
+    "figure": "latlunge",
     "qualities": ["lat", "single", "mob"],
     "strongRatio": 1.9,
     "bodyweightShare": 0.85,
@@ -228,6 +243,7 @@
     "muscles": ["quads", "glutes"],
     "equipment": [[]],
     "tracking": "bodyweight-reps",
+    "figure": "skatersq",
     "qualities": ["single"],
     "strongRatio": 1.35,
     "bodyweightShare": 1,
@@ -244,6 +260,7 @@
     "muscles": ["quads", "glutes"],
     "equipment": [[]],
     "tracking": "bodyweight-reps",
+    "figure": "pistol",
     "qualities": ["single", "mob"],
     "strongRatio": 1.4,
     "bodyweightShare": 1,
@@ -260,6 +277,7 @@
     "muscles": ["chest", "arms", "shoulders"],
     "equipment": [["barbell", "bench"]],
     "tracking": "weight-reps",
+    "figure": "bench",
     "strongRatio": 1.25,
     "mainLift": true,
     "cues": [
@@ -275,6 +293,7 @@
     "muscles": ["chest", "arms", "shoulders"],
     "equipment": [["dumbbell", "bench"]],
     "tracking": "weight-reps",
+    "figure": "bench",
     "strongRatio": 0.45,
     "perHand": true,
     "mainLift": true,
@@ -291,6 +310,7 @@
     "muscles": ["chest", "shoulders"],
     "equipment": [["dumbbell", "bench"]],
     "tracking": "weight-reps",
+    "figure": "incline",
     "strongRatio": 0.4,
     "perHand": true,
     "cues": ["Bench at about 30°", "Lower to the upper chest", "Keep the shoulder blades back"]
@@ -302,6 +322,7 @@
     "muscles": ["chest", "arms", "abs"],
     "equipment": [[]],
     "tracking": "bodyweight-reps",
+    "figure": "pushup",
     "qualities": ["core"],
     "strongRatio": 1.5,
     "bodyweightShare": 0.65,
@@ -318,6 +339,7 @@
     "muscles": ["chest", "arms"],
     "equipment": [["dip"]],
     "tracking": "bodyweight-reps",
+    "figure": "dip",
     "strongRatio": 1.5,
     "bodyweightShare": 0.95,
     "cues": [
@@ -333,6 +355,7 @@
     "muscles": ["chest"],
     "equipment": [["cable"], ["dumbbell", "bench"]],
     "tracking": "weight-reps",
+    "figure": "fly",
     "cues": [
       "Soft bend in the elbows",
       "Hug a big tree",
@@ -346,6 +369,7 @@
     "muscles": ["shoulders", "arms"],
     "equipment": [["barbell"]],
     "tracking": "weight-reps",
+    "figure": "press",
     "qualities": ["core", "shoulder"],
     "strongRatio": 0.75,
     "mainLift": true,
@@ -362,6 +386,7 @@
     "muscles": ["shoulders", "arms"],
     "equipment": [["dumbbell"]],
     "tracking": "weight-reps",
+    "figure": "press",
     "qualities": ["shoulder"],
     "strongRatio": 0.32,
     "perHand": true,
@@ -375,6 +400,7 @@
     "muscles": ["shoulders", "chest", "abs"],
     "equipment": [["landmine"]],
     "tracking": "weight-reps",
+    "figure": "landmine",
     "qualities": ["rot", "shoulder", "core"],
     "cues": [
       "Kneel on the side of the pressing arm",
@@ -389,6 +415,7 @@
     "muscles": ["shoulders"],
     "equipment": [["dumbbell"], ["cable"], ["band"]],
     "tracking": "weight-reps",
+    "figure": "latraise",
     "perHand": true,
     "cues": ["Lead with the elbows", "Stop at shoulder height", "Lower slowly, no swinging"]
   },
@@ -399,6 +426,7 @@
     "muscles": ["back", "arms"],
     "equipment": [["barbell"]],
     "tracking": "weight-reps",
+    "figure": "row",
     "qualities": ["post", "grip"],
     "strongRatio": 1,
     "mainLift": true,
@@ -415,6 +443,7 @@
     "muscles": ["back", "arms"],
     "equipment": [["dumbbell", "bench"], ["dumbbell"]],
     "tracking": "weight-reps",
+    "figure": "dbrow",
     "qualities": ["grip"],
     "strongRatio": 0.5,
     "perHand": true,
@@ -427,6 +456,7 @@
     "muscles": ["back", "arms"],
     "equipment": [["cable"]],
     "tracking": "weight-reps",
+    "figure": "cablerow",
     "strongRatio": 1,
     "cues": [
       "Sit tall",
@@ -441,6 +471,7 @@
     "muscles": ["back", "arms", "abs"],
     "equipment": [["rings"], ["barbell", "rack"]],
     "tracking": "bodyweight-reps",
+    "figure": "invrow",
     "qualities": ["core"],
     "strongRatio": 1.2,
     "bodyweightShare": 0.6,
@@ -453,6 +484,7 @@
     "muscles": ["back", "arms"],
     "equipment": [["pullup"], ["rings"]],
     "tracking": "bodyweight-reps",
+    "figure": "pullup",
     "qualities": ["grip"],
     "strongRatio": 1.4,
     "bodyweightShare": 1,
@@ -470,6 +502,7 @@
     "muscles": ["back", "arms"],
     "equipment": [["pullup"]],
     "tracking": "bodyweight-reps",
+    "figure": "pullup",
     "qualities": ["grip"],
     "strongRatio": 1.45,
     "bodyweightShare": 1,
@@ -483,6 +516,7 @@
     "muscles": ["back", "arms"],
     "equipment": [["cable"]],
     "tracking": "weight-reps",
+    "figure": "pulldown",
     "strongRatio": 0.95,
     "cues": ["Slight lean back", "Pull to the top of the chest", "Control it back up"]
   },
@@ -493,6 +527,7 @@
     "muscles": ["shoulders", "back"],
     "equipment": [["cable"], ["band"]],
     "tracking": "weight-reps",
+    "figure": "facepull",
     "qualities": ["shoulder"],
     "cues": [
       "Rope to forehead height",
@@ -507,6 +542,7 @@
     "muscles": ["shoulders", "back"],
     "equipment": [["band"]],
     "tracking": "bodyweight-reps",
+    "figure": "pullapart",
     "qualities": ["shoulder"],
     "cues": ["Arms straight at chest height", "Pull the band to your chest", "Squeeze the shoulder blades"]
   },
@@ -517,6 +553,7 @@
     "muscles": ["arms"],
     "equipment": [["dumbbell"], ["cable"], ["band"]],
     "tracking": "weight-reps",
+    "figure": "curl",
     "perHand": true,
     "armFocus": "biceps",
     "cues": ["Elbows pinned at your sides", "Turn the pinky up at the top", "Lower for a slow count of 3"]
@@ -528,6 +565,7 @@
     "muscles": ["arms"],
     "equipment": [["dumbbell"], ["kettlebell"]],
     "tracking": "weight-reps",
+    "figure": "curl",
     "qualities": ["grip"],
     "perHand": true,
     "armFocus": "biceps",
@@ -540,6 +578,7 @@
     "muscles": ["arms"],
     "equipment": [["cable"], ["band"]],
     "tracking": "weight-reps",
+    "figure": "pushdown",
     "armFocus": "triceps",
     "cues": ["Elbows glued to your sides", "Spread the rope at the bottom", "Only the forearms move"]
   },
@@ -550,6 +589,7 @@
     "muscles": ["arms"],
     "equipment": [["dumbbell"], ["cable"]],
     "tracking": "weight-reps",
+    "figure": "ohext",
     "armFocus": "triceps",
     "cues": ["Elbows point forward", "Deep stretch behind the head", "Lock out at the top"]
   },
@@ -560,6 +600,7 @@
     "muscles": ["calves"],
     "equipment": [[], ["dumbbell"]],
     "tracking": "weight-reps",
+    "figure": "calf",
     "qualities": ["single"],
     "cues": ["Full stretch at the bottom", "Rise as high as you can", "Pause at the top"]
   },
@@ -570,6 +611,7 @@
     "muscles": ["calves"],
     "equipment": [[]],
     "tracking": "bodyweight-reps",
+    "figure": "tib",
     "qualities": ["single"],
     "cues": [
       "Back against a wall, heels forward",
@@ -584,6 +626,7 @@
     "muscles": ["back", "abs", "arms"],
     "equipment": [["dumbbell"], ["kettlebell"], ["trapbar"]],
     "tracking": "time",
+    "figure": "farmer",
     "qualities": ["grip", "core"],
     "strongRatio": 0.5,
     "perHand": true,
@@ -597,6 +640,7 @@
     "muscles": ["abs"],
     "equipment": [["dumbbell"], ["kettlebell"]],
     "tracking": "time",
+    "figure": "suitcase",
     "qualities": ["lat", "core", "grip"],
     "strongRatio": 0.35,
     "strongSeconds": 40,
@@ -613,6 +657,7 @@
     "muscles": ["abs"],
     "equipment": [[]],
     "tracking": "time",
+    "figure": "plank",
     "qualities": ["core"],
     "strongSeconds": 120,
     "cues": ["Squeeze glutes and quads", "Ribs down", "Push the floor away"]
@@ -624,6 +669,7 @@
     "muscles": ["abs"],
     "equipment": [[]],
     "tracking": "time",
+    "figure": "sideplank",
     "qualities": ["core", "lat"],
     "strongSeconds": 75,
     "cues": ["Elbow under shoulder", "Hips high, body in a line", "Keep breathing"]
@@ -635,6 +681,7 @@
     "muscles": ["abs"],
     "equipment": [["bench"]],
     "tracking": "time",
+    "figure": "copen",
     "qualities": ["lat", "core"],
     "strongSeconds": 45,
     "cues": [
@@ -650,6 +697,7 @@
     "muscles": ["abs"],
     "equipment": [[]],
     "tracking": "bodyweight-reps",
+    "figure": "deadbug",
     "qualities": ["core"],
     "cues": [
       "Low back pressed into the floor",
@@ -664,6 +712,7 @@
     "muscles": ["abs"],
     "equipment": [["cable"], ["band"]],
     "tracking": "weight-reps",
+    "figure": "pallof",
     "qualities": ["rot", "core"],
     "cues": ["Stand side-on to the anchor", "Press straight out and hold", "Don’t let it twist you"]
   },
@@ -674,6 +723,7 @@
     "muscles": ["abs"],
     "equipment": [["pullup"]],
     "tracking": "bodyweight-reps",
+    "figure": "hlr",
     "qualities": ["core", "grip"],
     "strongReps": 15,
     "cues": ["Dead hang, no swinging", "Curl the pelvis up", "Lower slowly"]
@@ -685,6 +735,7 @@
     "muscles": ["abs"],
     "equipment": [["abwheel"]],
     "tracking": "bodyweight-reps",
+    "figure": "abwheel",
     "qualities": ["core"],
     "strongReps": 15,
     "cues": [
@@ -700,6 +751,7 @@
     "muscles": ["abs", "shoulders"],
     "equipment": [["cable"], ["band"]],
     "tracking": "weight-reps",
+    "figure": "chop",
     "qualities": ["rot", "power"],
     "cues": [
       "Rotate through the hips, not just the arms",
@@ -714,6 +766,7 @@
     "muscles": ["quads", "glutes"],
     "equipment": [["box"]],
     "tracking": "bodyweight-reps",
+    "figure": "boxjump",
     "qualities": ["power"],
     "cues": ["Quick arm swing", "Land soft and quiet", "Step down, don’t jump down"]
   },
@@ -724,6 +777,7 @@
     "muscles": ["glutes", "hams"],
     "equipment": [[]],
     "tracking": "bodyweight-reps",
+    "figure": "broad",
     "qualities": ["power", "post"],
     "cues": ["Load the hips, swing the arms", "Jump out, not up", "Stick the landing"]
   },
@@ -734,6 +788,7 @@
     "muscles": ["glutes", "quads"],
     "equipment": [[]],
     "tracking": "bodyweight-reps",
+    "figure": "bound",
     "qualities": ["power", "lat", "single"],
     "cues": [
       "Push sideways off the outside leg",
@@ -748,6 +803,7 @@
     "muscles": ["quads", "glutes"],
     "equipment": [[]],
     "tracking": "bodyweight-reps",
+    "figure": "jump",
     "qualities": ["power"],
     "cues": ["Quarter squat, then explode", "Land softly and reset", "Quality over speed"]
   },
@@ -758,6 +814,7 @@
     "muscles": ["glutes", "hams"],
     "equipment": [["kettlebell"]],
     "tracking": "weight-reps",
+    "figure": "swing",
     "qualities": ["power", "post", "endur"],
     "cues": ["Hike the bell back hard", "Snap the hips", "Bell floats to chest height"]
   },
@@ -768,6 +825,7 @@
     "muscles": ["abs", "shoulders"],
     "equipment": [["medball"]],
     "tracking": "weight-reps",
+    "figure": "throw",
     "qualities": ["power", "rot"],
     "cues": [
       "Stand side-on to a wall",
@@ -782,6 +840,7 @@
     "muscles": ["abs", "back"],
     "equipment": [["medball"]],
     "tracking": "weight-reps",
+    "figure": "slam",
     "qualities": ["power", "core"],
     "cues": ["Reach up tall", "Slam with the whole body", "Hinge to pick it up"]
   },
@@ -792,6 +851,7 @@
     "muscles": ["back", "quads"],
     "equipment": [["rower"]],
     "tracking": "time",
+    "figure": "rower",
     "qualities": ["endur"],
     "cues": [
       "Legs, hips, then arms",
@@ -806,6 +866,7 @@
     "muscles": ["quads"],
     "equipment": [["bike"]],
     "tracking": "time",
+    "figure": "bike",
     "qualities": ["endur", "power"],
     "cues": ["All-out for the work interval", "Spin easy between", "Stay seated"]
   },
@@ -816,6 +877,7 @@
     "muscles": ["quads", "glutes"],
     "equipment": [["sled"]],
     "tracking": "time",
+    "figure": "sled",
     "qualities": ["power", "endur"],
     "cues": [
       "Low body angle",
@@ -830,6 +892,7 @@
     "muscles": ["calves"],
     "equipment": [["jumprope"]],
     "tracking": "time",
+    "figure": "rope",
     "qualities": ["endur", "single"],
     "cues": [
       "Small hops on the balls of your feet",
@@ -844,6 +907,7 @@
     "muscles": ["chest", "quads"],
     "equipment": [[]],
     "tracking": "bodyweight-reps",
+    "figure": "burpee",
     "qualities": ["endur"],
     "cues": ["Chest to the floor", "Jump and reach overhead", "A steady pace you can hold"]
   },
@@ -854,6 +918,7 @@
     "muscles": ["glutes"],
     "equipment": [[]],
     "tracking": "time",
+    "figure": "hip9090",
     "qualities": ["mob"],
     "cues": ["Sit tall", "Rotate both knees side to side", "Hands off the floor if you can"]
   },
@@ -864,6 +929,7 @@
     "muscles": ["glutes", "hams"],
     "equipment": [[]],
     "tracking": "time",
+    "figure": "stretch",
     "qualities": ["mob", "rot"],
     "cues": ["Deep lunge, elbow to instep", "Rotate and reach to the sky", "Alternate sides"]
   },
@@ -874,6 +940,7 @@
     "muscles": ["back"],
     "equipment": [[]],
     "tracking": "time",
+    "figure": "openbook",
     "qualities": ["mob", "rot", "shoulder"],
     "cues": [
       "Lie on your side, knees stacked",
@@ -888,6 +955,7 @@
     "muscles": ["calves"],
     "equipment": [[]],
     "tracking": "time",
+    "figure": "ankle",
     "qualities": ["mob", "single"],
     "cues": ["Half-kneeling, front heel down", "Drive the knee past the toes", "Slow rocks, no bouncing"]
   },
@@ -898,6 +966,7 @@
     "muscles": ["shoulders"],
     "equipment": [["band"]],
     "tracking": "time",
+    "figure": "passthru",
     "qualities": ["mob", "shoulder"],
     "cues": [
       "Wide grip",
@@ -912,6 +981,7 @@
     "muscles": ["quads"],
     "equipment": [[]],
     "tracking": "time",
+    "figure": "couch",
     "qualities": ["mob"],
     "cues": [
       "Back knee against a wall or bench",
@@ -926,6 +996,7 @@
     "muscles": ["quads", "glutes"],
     "equipment": [[]],
     "tracking": "time",
+    "figure": "deepsq",
     "qualities": ["mob"],
     "cues": ["Heels down", "Elbows push the knees out", "Breathe into the bottom"]
   }
