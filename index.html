@@ -157,10 +157,10 @@ textarea{resize:vertical}
 .next{background:var(--sunk);border-radius:10px;padding:12px 14px;text-align:left;width:100%}
 .blkhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .blkhead .role{margin-right:auto}
-.setsctl,.mv{display:inline-flex;align-items:center;gap:4px;font-size:13px;color:var(--muted)}
+.setsctl{display:inline-flex;align-items:center;gap:4px;font-size:13px;color:var(--muted)}
 .setsctl b{color:var(--ink);min-width:1.2em;text-align:center}
-.setsctl .btn,.mv .btn{min-width:32px;padding:3px 0;line-height:1.2}
-.setsctl .btn:disabled,.mv .btn:disabled{opacity:.35;cursor:default}
+.setsctl .btn{min-width:32px;padding:3px 0;line-height:1.2}
+.setsctl .btn:disabled{opacity:.35;cursor:default}
 .setrows{grid-column:2/span 2;display:flex;flex-wrap:wrap;gap:6px}
 .setrows span{font-family:var(--f-mono);font-size:13px;background:var(--sunk);border-radius:6px;padding:2px 8px}
 .setrows i{font-style:normal;color:var(--faint);margin-right:6px}
@@ -173,9 +173,34 @@ textarea{resize:vertical}
 .setrow.now{background:var(--accent-soft)}
 .setrow.now em{color:var(--accent)}
 .setrow.skipped span{color:var(--faint);text-decoration:line-through}
+.grip{flex:none;display:inline-grid;place-items:center;width:36px;height:36px;margin:-6px -6px -6px 0;border:0;border-radius:8px;background:none;color:var(--faint);cursor:grab;touch-action:none}
+.grip svg{width:12px;height:18px}
+.grip:hover,.grip:focus-visible{color:var(--ink);background:var(--sunk)}
+[data-dragitem]{transition:transform .15s ease}
+[data-dragitem].dragging{transition:none;position:relative;z-index:5;box-shadow:0 10px 28px rgba(10,16,20,.18);cursor:grabbing}
+body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
+.rungroup{display:flex;align-items:center;gap:4px;background:var(--surface);border-bottom:1px solid var(--line)}
+.rungroup .runrows{flex:1;min-width:0}
+.rungroup .runitem:last-child{border-bottom:0}
+.rungroup .grip{margin:0}
+@media (max-width:640px){.grip{width:44px;height:44px}}
+.exbtns{display:inline-flex;gap:2px}
+.ex .name .more{color:var(--faint);font-weight:500}
+.planned{background:var(--accent-soft);border-color:transparent}
+.tpllist{display:flex;flex-direction:column}
+.tplrow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.tplrow>div{min-width:0}
+.xbtn{font-size:18px;line-height:1;padding:3px 10px;color:var(--muted)}
+@media (max-width:640px){.exbtns .btn{min-height:40px}}
+#pickq{width:100%;font-size:16px}
+.picklist{display:flex;flex-direction:column}
+.pickhead{margin:14px 0 4px}
+.pickrow{display:flex;flex-direction:column;gap:2px;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:10px 4px;min-height:52px}
+.pickrow:hover{background:var(--sunk)}
+.pickrow .nm{font-weight:600}
 .runitem{display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--line)}
 .runitem .runrow{flex:1;border-bottom:0}
-@media (max-width:640px){.setsctl .btn,.mv .btn{min-width:40px;min-height:40px}}
+@media (max-width:640px){.setsctl .btn{min-width:40px;min-height:40px}}
 .setlog{display:flex;flex-wrap:wrap;gap:6px}
 .setlog span{font-family:var(--f-mono);font-size:13px;background:var(--sunk);border-radius:6px;padding:2px 8px}
 .upnext{font-size:13px;color:var(--muted)}
@@ -677,13 +702,58 @@ function getPlan(){
   planCache={key,...buildPlan(seed)}; persist(); return planCache;
 }
 function reshuffle(){const seed=Math.floor(Math.random()*1e6);planCache={key:ctxKey(),...buildPlan(seed)};persist();render()}
-function swapIn(plan,bi,ii){
-  const it=plan.blocks[bi].items[ii], used=new Set(plan.blocks.flatMap(b=>b.items.map(i=>i.ex))), h=has();
-  const next=(it.alts||[]).find(id=>BYID[id]&&!used.has(id)&&avail(BYID[id],h));
-  if(!next){toast('No other option with your equipment');return false}
-  it.alts=it.alts.filter(a=>a!==next).concat(it.ex); it.ex=next;
-  const role=plan.blocks[bi].role, d=dose(role==='look'||role==='sport'?'acc':role,BYID[next]); d.sets=it.d.sets; if(role==='warm'){d.sets=1}
-  it.d=d; return true;
+// Swapping, adding and removing exercises. A substitute keeps the slot's sets; an added exercise becomes its own block at the end.
+const planRole=r=>r==='look'||r==='sport'?'acc':r;
+function substitute(plan,bi,ii,id){
+  const bl=plan.blocks[bi], it=bl&&bl.items[ii], x=BYID[id]; if(!it||!x||it.ex===id) return false;
+  const d=dose(planRole(bl.role),x); d.sets=bl.role==='warm'?1:it.d.sets;
+  it.alts=[it.ex,...(it.alts||[]).filter(a=>a!==id)]; it.ex=id; it.d=d; return true;
+}
+function addBlock(plan,id){
+  const x=BYID[id]; if(!x) return false;
+  const role=x.p==='cond'?'cond':x.p==='power'?'power':x.main?'main':'acc', d=dose(role,x);
+  plan.blocks.push({role,pri:9,o:20,rest:d.rest,items:[{ex:id,alts:[],d}]}); plan.est=plan.blocks.reduce((t,b)=>t+blockSecs(b),0); return true;
+}
+function removeItem(plan,bi,ii){
+  const bl=plan.blocks[bi]; if(!bl||!bl.items[ii]) return false;
+  bl.items.splice(ii,1); if(!bl.items.length) plan.blocks.splice(bi,1);
+  plan.est=plan.blocks.reduce((t,b)=>t+blockSecs(b),0); return true;
+}
+// Templates: a saved list of blocks (exercises, sets and rest). Weights still come from your history each time.
+const cleanBlocks=bl=>JSON.parse(JSON.stringify(bl)).map(b=>({role:b.role,pri:b.pri,o:b.o,rest:b.rest,items:b.items.map(it=>({ex:it.ex,alts:it.alts||[],d:it.d}))}));
+function saveTemplate(name){
+  const p=state.profile, plan=getPlan(); if(!plan.blocks.length) return;
+  p.templates=(p.templates||[]).filter(t=>t.n.toLowerCase()!==name.toLowerCase());
+  p.templates.unshift({id:'t'+uid6(),n:name,focus:plan.focus,blocks:cleanBlocks(plan.blocks),at:new Date().toISOString()});
+  planCache.tpl=name; touchProfile();
+}
+function useTemplate(id){
+  const t=(state.profile.templates||[]).find(t=>t.id===id); if(!t) return;
+  const blocks=cleanBlocks(t.blocks).filter(b=>{b.items=b.items.filter(it=>BYID[it.ex]); return b.items.length});
+  planCache={key:ctxKey(),seed:planCache&&planCache.seed||1,focus:t.focus,tpl:t.n,blocks,est:blocks.reduce((s,b)=>s+blockSecs(b),0),why:`From your template “${t.n}”. Weights are suggested from your latest history.`};
+  persist();
+}
+// The exercise picker: same movement first when swapping, favorites first when adding
+let detailAt=null; // "b:i" when an exercise drawer was opened from today's plan
+let picker=null; // {mode:'swap'|'add', where:'plan'|'run', b, i, q, all}
+function openPick(o){picker={q:'',all:false,...o}; selected='picker'; render(); setTimeout(()=>{const el=document.getElementById('pickq'); if(el&&matchMedia('(pointer:fine)').matches) el.focus()},0)}
+function pickRows(){
+  const P=picker, plan=P.where==='run'?active.plan:planCache, cur=P.mode==='swap'?BYID[plan.blocks[P.b].items[P.i].ex]:null, h=has(), fav=state.profile.favorites;
+  const inPlan=new Set(plan.blocks.flatMap(b=>b.items.map(i=>i.ex))), q=normName(P.q);
+  let list=EX.filter(x=>!inPlan.has(x.id)&&(P.all||avail(x,h))&&(!q||normName(x.n+' '+PAT[x.p]+' '+x.m.map(m=>MUS[m]).join(' ')).includes(q)));
+  const tier=x=>cur?(x.p===cur.p?(x.m[0]===cur.m[0]?0:1):x.m[0]===cur.m[0]?2:3):(fav.includes(x.id)?0:1);
+  const heads=cur?['Same movement and muscle','Same movement','Same muscle','Everything else']:['Favorites','All exercises'];
+  list=list.map(x=>({x,t:tier(x),f:fav.includes(x.id)?0:1})).sort((a,b)=>a.t-b.t||a.f-b.f||a.x.n.localeCompare(b.x.n));
+  let last=-1;
+  return list.map(({x,t})=>{const L=lastEntry(x.id), hd=t!==last?`<h3 class="pickhead">${heads[t]}</h3>`:''; last=t;
+    return hd+`<button class="pickrow" data-pick="${x.id}"><span class="nm">${esc(x.n)}${fav.includes(x.id)?' <span style="color:var(--accent)">★</span>':''}</span>
+      <span class="small muted">${esc(PAT[x.p])} · ${x.m.map(m=>MUS[m]).filter(Boolean).join(', ')}${L?' · last '+esc(setTxt(x,L.best)):''}${avail(x,h)?'':' · needs '+esc(eqNeed(x))}</span></button>`}).join('')||'<p class="empty">No exercises match.</p>';
+}
+function applyPick(id){
+  const P=picker; selected=null; picker=null;
+  if(P.where==='plan'){ if(P.mode==='swap'?substitute(planCache,P.b,P.i,id):addBlock(planCache,id)){persist(); toast(P.mode==='swap'?`Swapped in ${BYID[id].n}`:`Added ${BYID[id].n} at the end`)} render(); return }
+  if(P.mode==='swap'){ if(substitute(active.plan,P.b,P.i,id)){const c=curItem(); if(c&&c.st.b===P.b&&c.st.i===P.i) initDraft(); saveActive()} render(); return }
+  editActive(pl=>addBlock(pl,id)); toast(`Added ${BYID[id].n} at the end`);
 }
 function roundW(x,kg){const step=U()==='lb'?5/LB:(x.per?2:2.5); return Math.max(step,Math.round(kg/step)*step)}
 // No history for this exercise yet: estimate a starting weight from recent lifts that train the same muscle, preferring the same movement.
@@ -704,9 +774,8 @@ function relatedStart(x,d){
   if(!(w>0)) return null;
   return {w:roundW(x,w),from:use.slice(0,2).map(o=>o.y)};
 }
-// Editing a plan: move a block up or down, or change its number of sets. The warm-up stays first.
-function canMove(plan,bi,dir){const bl=plan.blocks, nb=bi+dir; return nb>=0&&nb<bl.length&&bl[bi].role!=='warm'&&bl[nb].role!=='warm'}
-function moveBlock(plan,bi,dir){if(!canMove(plan,bi,dir)) return false; const bl=plan.blocks; [bl[bi],bl[bi+dir]]=[bl[bi+dir],bl[bi]]; return true}
+// Editing a plan: move a block, or change its number of sets. The warm-up stays first.
+function moveBlockTo(plan,from,to){const bl=plan.blocks; if(from===to||!bl[from]||!bl[to]||bl[from].role==='warm'||bl[to].role==='warm') return false; bl.splice(to,0,bl.splice(from,1)[0]); return true}
 function setCount(plan,bi,n){
   const b=plan.blocks[bi]; if(!b||b.role==='warm') return false; n=Math.max(1,Math.min(10,n)); if(n===b.items[0].d.sets) return false;
   b.items.forEach(it=>it.d.sets=n); plan.est=plan.blocks.reduce((t,b)=>t+blockSecs(b),0); return true;
@@ -720,7 +789,7 @@ function targetTxt(x,d,sg){
 }
 function setsCtl(b,bi,kind,min=1){const n=b.items[0].d.sets;
   return `<span class="setsctl"><button class="btn sm" data-${kind}="${bi}" data-v="-1" aria-label="One set fewer"${n<=min?' disabled':''}>−</button><b class="mono">${n}</b> sets<button class="btn sm" data-${kind}="${bi}" data-v="1" aria-label="One set more"${n>=10?' disabled':''}>+</button></span>`}
-function moveCtl(plan,bi,kind){return `<span class="mv"><button class="btn sm" data-${kind}="${bi}" data-v="-1" aria-label="Move up"${canMove(plan,bi,-1)?'':' disabled'}>↑</button><button class="btn sm" data-${kind}="${bi}" data-v="1" aria-label="Move down"${canMove(plan,bi,1)?'':' disabled'}>↓</button></span>`}
+const grip=`<button class="grip" data-grip="1" aria-label="Drag to reorder, or use the arrow keys" title="Drag to reorder"><svg viewBox="0 0 12 18" aria-hidden="true"><g fill="currentColor"><circle cx="3" cy="3" r="1.6"/><circle cx="9" cy="3" r="1.6"/><circle cx="3" cy="9" r="1.6"/><circle cx="9" cy="9" r="1.6"/><circle cx="3" cy="15" r="1.6"/><circle cx="9" cy="15" r="1.6"/></g></svg></button>`;
 // Progressive overload: what to aim for this time, from the last time you did it
 function suggest(x,d){
   const L=lastEntry(x.id);
@@ -761,7 +830,7 @@ function buildSteps(plan){
 }
 function startWorkout(){
   const plan=JSON.parse(JSON.stringify(getPlan()));
-  active={id:uid6(),started:Date.now(),focus:plan.focus,est:plan.est,plan,steps:buildSteps(plan),k:0,phase:'set',log:{},rests:[],draft:null};
+  active={id:uid6(),started:Date.now(),focus:plan.focus,tpl:plan.tpl,est:plan.est,plan,steps:buildSteps(plan),k:0,phase:'set',log:{},rests:[],draft:null};
   initDraft(); saveActive(); keepAwake(true); audio(); render(); window.scrollTo(0,0);
 }
 // Moving around the workout: steps can be done in any order; "open" steps are neither logged nor skipped
@@ -778,10 +847,10 @@ function goExercise(b,i){
 }
 // Change the running workout's plan; logged and skipped sets stay with the same exercise and set number
 function editActive(fn){
-  const A=active, ref=A.steps.map((s,j)=>({blk:A.plan.blocks[s.b],i:s.i,s:s.s,skip:s.skip,log:A.log[j]})), cur=A.phase!=='done'?ref[A.k]:null;
+  const A=active, ref=A.steps.map((s,j)=>({it:A.plan.blocks[s.b].items[s.i],s:s.s,skip:s.skip,log:A.log[j]})), cur=A.phase!=='done'?ref[A.k]:null;
   if(!fn(A.plan)) return;
   const steps=buildSteps(A.plan), log={}; let k=-1;
-  steps.forEach((st,j)=>{const o=ref.find(r=>r.blk===A.plan.blocks[st.b]&&r.i===st.i&&r.s===st.s); if(!o) return; if(o.skip) st.skip=true; if(o.log) log[j]=o.log; if(o===cur) k=j});
+  steps.forEach((st,j)=>{const o=ref.find(r=>r.it===A.plan.blocks[st.b].items[st.i]&&r.s===st.s); if(!o) return; if(o.skip) st.skip=true; if(o.log) log[j]=o.log; if(o===cur) k=j});
   A.steps=steps; A.log=log; A.est=A.plan.blocks.reduce((t,b)=>t+blockSecs(b),0);
   if(k<0){k=nextOpen(0); if(k<0) A.phase='done'; else {A.k=k; if(A.phase==='done') A.phase='set'; initDraft()}}
   else A.k=k;
@@ -834,7 +903,7 @@ function finishWorkout(save){
     const entries=[...by.entries()].map(([ex,sets])=>({ex,sets}));
     if(entries.length){
       const before={}; entries.forEach(e=>{const h=exHistory(e.ex); before[e.ex]=h.length?Math.max(...h.map(x=>x.v)):null});
-      const ses={id:active.id,ts:new Date(active.started).toISOString(),end:new Date().toISOString(),focus:active.focus,entries,
+      const ses={id:active.id,ts:new Date(active.started).toISOString(),end:new Date().toISOString(),focus:active.focus,tpl:active.tpl||undefined,entries,
         rest:{n:active.rests.length,ok:active.rests.filter(r=>r.a-r.p<=15).length,over:active.rests.reduce((t,r)=>t+Math.max(0,r.a-r.p),0)}};
       state.sessions.push(ses);
       const prs=entries.filter(e=>{const x=BYID[e.ex]; if(!x||before[e.ex]==null) return false; return Math.max(...e.sets.map(s=>metric(x,s).v))>before[e.ex]+.01}).map(e=>BYID[e.ex].n);
@@ -900,11 +969,11 @@ function viewToday(){
     ${lastSummary.prs.length?`<p><b>New bests:</b> ${esc(lastSummary.prs.join(', '))}</p>`:''}</section>`:'';
   const blocks=plan.blocks.map((b,bi)=>{
     const ss=b.items.length>1&&b.role!=='warm', letter=b.role==='warm'?'W':String.fromCharCode(65+bi-(plan.blocks[0].role==='warm'?1:0));
-    return `<article class="block"><div class="slot"><b>${Math.round(blockSecs(b)/60)}</b><span>min</span></div>
-      <div class="blkhead"><span class="role ${b.role}">${ROLE_NAME[b.role]}${ss?' · superset':''}</span>${b.role==='warm'?'':setsCtl(b,bi,'psets')+moveCtl(plan,bi,'pmove')}</div>
+    return `<article class="block"${b.role==='warm'?'':` data-dragitem="${bi}"`}><div class="slot"><b>${Math.round(blockSecs(b)/60)}</b><span>min</span></div>
+      <div class="blkhead"><span class="role ${b.role}">${ROLE_NAME[b.role]}${ss?' · superset':''}</span>${b.role==='warm'?'':setsCtl(b,bi,'psets')+grip}</div>
       <div class="exl" style="grid-column:2">${b.items.map((it,ii)=>{const x=BYID[it.ex], sg=b.role==='warm'?null:suggest(x,it.d);
-        return `<div class="ex"><span class="tag">${letter}${ss||b.role==='warm'?ii+1:''}</span><button class="name" data-open="${x.id}">${esc(x.n)}${p.favorites.includes(x.id)?' <span style="color:var(--accent)">★</span>':''}</button>
-          <button class="btn sm ghost" data-swap="${bi}:${ii}" title="Swap for another exercise">Swap</button>
+        return `<div class="ex"><span class="tag">${letter}${ss||b.role==='warm'?ii+1:''}</span><button class="name" data-open="${x.id}" data-at="${bi}:${ii}">${esc(x.n)}${p.favorites.includes(x.id)?' <span style="color:var(--accent)">★</span>':''} <span class="more" aria-hidden="true">›</span></button>
+          <span class="exbtns"><button class="btn sm ghost" data-swap="${bi}:${ii}" title="Swap for another exercise">Swap</button><button class="btn sm ghost xbtn" data-rmitem="${bi}:${ii}" aria-label="Remove ${esc(x.n)}" title="Remove">×</button></span>
           <span class="dose mono">${esc(doseTxt(x,it.d,ss?(ii===b.items.length-1?b.rest:0):b.rest))}</span>
           ${b.role==='warm'?'':`<span class="setrows">${Array.from({length:it.d.sets},(_,s)=>`<span><i>${s+1}</i>${esc(targetTxt(x,it.d,sg))}</span>`).join('')}</span>`}
           ${sg&&sg.note?`<span class="sug">${esc(sg.note)}</span>`:''}</div>`}).join('')}</div></article>`}).join('');
@@ -918,8 +987,9 @@ function viewToday(){
       <label class="field">Cross-train for<select data-ctx="sport">${opt(sportOpts,c.sport)}</select></label>
       <button class="btn primary big" data-act="start"${plan.blocks.length?'':' disabled'}>Start workout</button>
     </div>${plan.why?`<p class="ctx-note">${esc(plan.why)}</p>`:''}</section>
-    <div class="row" style="justify-content:space-between"><h2>${esc(FOCUS_NAME[plan.focus])} · about ${Math.round(plan.est/60)} min</h2><button class="btn sm ghost" data-act="shuffle">Shuffle</button></div>
-    <div class="plan">${blocks||'<div class="empty">Nothing fits your equipment yet. Add some under Gear &amp; goals.</div>'}</div>
+    <div class="row" style="justify-content:space-between"><h2>${esc(plan.tpl||FOCUS_NAME[plan.focus])} · about ${Math.round(plan.est/60)} min</h2><span class="row"><button class="btn sm" data-act="templates">Templates</button><button class="btn sm ghost" data-act="shuffle">Shuffle</button></span></div>
+    <div class="plan" data-dragkind="plan">${blocks||'<div class="empty">Nothing fits your equipment yet. Add some under Gear &amp; goals.</div>'}</div>
+    <div class="row"><button class="btn" data-act="addEx">+ Add exercise</button></div>
   </div>`;
 }
 function viewRun(){
@@ -968,7 +1038,7 @@ function viewRun(){
     ${c.b.role==='warm'?(prev.length?`<div class="setlog">${prev.map((l,i)=>`<span>${esc(setTxt(x,l))}</span>`).join('')}</div>`:''):runSets(c,x,sg)}
     <ul class="cues small">${x.c.map(q=>`<li>${esc(q)}</li>`).join('')}</ul>
     <button class="btn primary done-set" data-act="done">Done${c.b.role==='warm'?'':' set'}</button>
-    <div class="row"><button class="btn sm" data-act="swapRun">Swap exercise</button><button class="btn sm ghost" data-act="skipEx">Skip exercise</button>${doneN?`<button class="btn sm ghost" data-act="undo">Undo last set</button>`:''}</div>
+    <div class="row"><button class="btn sm" data-act="swapRun">Swap exercise</button>${prev.length?'':`<button class="btn sm ghost" data-act="rmRun">Remove</button>`}<button class="btn sm ghost" data-act="skipEx">Skip exercise</button>${doneN?`<button class="btn sm ghost" data-act="undo">Undo last set</button>`:''}</div>
     ${upcoming.length?`<p class="upnext">Up next: ${esc(upcoming.join(' · '))}</p>`:''}
   </section></div>`;
 }
@@ -1006,7 +1076,7 @@ function viewProgress(){
   if(!chartEx||!done.includes(chartEx)) chartEx=done.find(id=>BYID[id].std)||done[0]||null;
   const hist=[...S].reverse().slice(0,30).map(s=>{
     const mins=s.end?Math.round((new Date(s.end)-new Date(s.ts))/60000):null;
-    return `<div class="entry"><div><b>${esc(FOCUS_NAME[s.focus]||'Workout')}</b> <span class="meta">${fmtDate(s.ts)}${mins!=null?' · '+mins+' min':''}${s.rest&&s.rest.n?` · rests on time ${s.rest.ok}/${s.rest.n}`:''}</span>
+    return `<div class="entry"><div><b>${esc(s.tpl||FOCUS_NAME[s.focus]||'Workout')}</b> <span class="meta">${fmtDate(s.ts)}${mins!=null?' · '+mins+' min':''}${s.rest&&s.rest.n?` · rests on time ${s.rest.ok}/${s.rest.n}`:''}</span>
       <div class="small muted">${s.entries.map(e=>{const x=BYID[e.ex];return x?`${esc(x.n)} ${e.sets.map(st=>esc(setTxt(x,st))).join(', ')}`:''}).filter(Boolean).join(' · ')}</div></div>
       <div>${pendingDelete===s.id?`<button class="btn sm danger" data-del="${s.id}">Delete</button> <button class="btn sm ghost" data-delcancel="1">Keep</button>`:`<button class="btn sm ghost" data-delask="${s.id}" aria-label="Delete workout">✕</button>`}</div></div>`}).join('');
   return `<div class="stack">
@@ -1138,11 +1208,33 @@ function renderDrawer(){
   if(!selected){host.innerHTML='';return}
   if(selected==='runlist'&&active){
     host.innerHTML=`<div class="scrim" data-close="1"></div><aside class="drawer" role="dialog" aria-label="Exercises in this workout"><button class="x" data-close="1" aria-label="Close">×</button>
-      <h2>This workout</h2><div class="runlist">${exList().map(e=>{const it=active.plan.blocks[e.b].items[e.i], x=BYID[it.ex], done=e.steps.filter(j=>active.log[j]).length,
+      <h2>This workout</h2><div class="runlist" data-dragkind="run">${active.plan.blocks.map((bl,b)=>`<div class="rungroup"${bl.role==='warm'?'':` data-dragitem="${b}"`}><div class="runrows">${exList().filter(e=>e.b===b).map(e=>{const it=active.plan.blocks[e.b].items[e.i], x=BYID[it.ex], done=e.steps.filter(j=>active.log[j]).length,
         skipped=e.steps.every(j=>active.steps[j].skip||active.log[j])&&e.steps.some(j=>active.steps[j].skip), cur=active.phase!=='done'&&active.steps[active.k]&&active.steps[active.k].b===e.b&&active.steps[active.k].i===e.i;
         return `<div class="runitem"><button class="runrow${cur?' cur':''}" data-goex="${e.b}:${e.i}"><span class="tag">${exTag(e.b,e.i)}</span><span class="nm">${esc(x.n)}</span>
-          <span class="small ${done===e.steps.length?'ok':'muted'}">${skipped?'Skipped':done===e.steps.length?'Done ✓':`${done}/${e.steps.length} sets`}</span></button>${e.i===0&&active.plan.blocks[e.b].role!=='warm'?moveCtl(active.plan,e.b,'rmove'):''}</div>`}).join('')}</div>
-      <p class="small muted">Tap an exercise to jump to it, or use the arrows to change the order (supersets move together). You can come back to anything you skip.</p></aside>`;
+          <span class="small ${done===e.steps.length?'ok':'muted'}">${skipped?'Skipped':done===e.steps.length?'Done ✓':`${done}/${e.steps.length} sets`}</span></button></div>`}).join('')}</div>${bl.role==='warm'?'':grip}</div>`).join('')}</div>
+      <div class="row"><button class="btn sm" data-act="addExRun">+ Add exercise</button></div>
+      <p class="small muted">Tap an exercise to jump to it. Drag the handle to change the order (supersets move together). You can come back to anything you skip.</p></aside>`;
+    return;
+  }
+  if(selected==='templates'){
+    const T=state.profile.templates||[], plan=getPlan();
+    host.innerHTML=`<div class="scrim" data-close="1"></div><aside class="drawer" role="dialog" aria-label="Templates"><button class="x" data-close="1" aria-label="Close">×</button>
+      <h2>Templates</h2>
+      <div class="panel stack"><h3>Save today’s plan</h3><p class="small muted">Keeps the exercises, order, sets and rest. Weights are suggested fresh from your history each time you use it.</p>
+        <div class="row"><input type="text" id="tplName" placeholder="e.g. Monday legs" value="${esc(plan.tpl||'')}" style="flex:1 1 180px"><button class="btn sm primary" data-act="tplSave"${plan.blocks.length?'':' disabled'}>Save</button></div></div>
+      ${T.length?`<div class="tpllist">${T.map(t=>`<div class="tplrow"><div><b>${esc(t.n)}</b><div class="small muted">${t.blocks.reduce((n,b)=>n+b.items.length,0)} exercises · ${esc(t.blocks.filter(b=>b.role!=='warm').flatMap(b=>b.items.map(it=>BYID[it.ex]?BYID[it.ex].n:'')).filter(Boolean).slice(0,4).join(', '))}${t.blocks.length>4?'…':''}</div></div>
+        <span class="row">${pendingDelete==='TPL'+t.id?`<button class="btn sm danger" data-tpldel="${t.id}">Delete</button><button class="btn sm ghost" data-delcancel="1">Keep</button>`:`<button class="btn sm primary" data-tpluse="${t.id}">Use</button><button class="btn sm ghost xbtn" data-delask="TPL${t.id}" aria-label="Delete ${esc(t.n)}">×</button>`}</span></div>`).join('')}</div>`:'<p class="small muted">No templates yet. Arrange a plan the way you like it, then save it here.</p>'}
+    </aside>`;
+    return;
+  }
+  if(selected==='picker'&&picker){
+    const plan=picker.where==='run'?active&&active.plan:planCache; if(!plan){selected=null;picker=null;host.innerHTML='';return}
+    const cur=picker.mode==='swap'?BYID[plan.blocks[picker.b].items[picker.i].ex]:null;
+    host.innerHTML=`<div class="scrim" data-close="1"></div><aside class="drawer" role="dialog" aria-label="${cur?'Swap exercise':'Add an exercise'}"><button class="x" data-close="1" aria-label="Close">×</button>
+      <h2>${cur?`Swap ${esc(cur.n)}`:'Add an exercise'}</h2>
+      <input type="search" id="pickq" data-pickq="1" placeholder="Search by name, movement or muscle" value="${esc(picker.q)}" autocomplete="off">
+      <div class="chips"><button class="chip" data-pickall="0" aria-pressed="${!picker.all}">With my equipment</button><button class="chip" data-pickall="1" aria-pressed="${picker.all}">Everything</button></div>
+      <div class="picklist" id="picklist">${pickRows()}</div></aside>`;
     return;
   }
   if(selected==='new'){
@@ -1159,8 +1251,18 @@ function renderDrawer(){
   }
   const x=BYID[selected]; if(!x){selected=null;host.innerHTML='';return}
   const h=exHistory(x.id), fav=state.profile.favorites.includes(x.id), alts=EX.filter(y=>y.p===x.p&&y.id!==x.id&&avail(y));
+  // Opened from today's plan: what's planned for it, before starting
+  let planned='';
+  if(detailAt&&!active&&planCache){const [bi,ii]=detailAt.split(':').map(Number), b=planCache.blocks[bi], it=b&&b.items[ii];
+    if(it&&it.ex===x.id){const sg=b.role==='warm'?null:suggest(x,it.d), ss=b.items.length>1&&b.role!=='warm';
+      planned=`<div class="panel stack planned"><h3>In today’s plan · ${esc(ROLE_NAME[b.role])}${ss?' · superset':''}</h3>
+        <p class="mono">${esc(doseTxt(x,it.d,ss?(ii===b.items.length-1?b.rest:0):b.rest))}</p>
+        ${b.role==='warm'?'':`<span class="setrows">${Array.from({length:it.d.sets},(_,s)=>`<span><i>${s+1}</i>${esc(targetTxt(x,it.d,sg))}</span>`).join('')}</span>`}
+        ${sg&&sg.note?`<p class="small muted">${esc(sg.note)}</p>`:''}
+        <div class="row"><button class="btn sm" data-swap="${bi}:${ii}">Swap</button><button class="btn sm ghost" data-rmitem="${bi}:${ii}">Remove from plan</button></div></div>`}}
   host.innerHTML=`<div class="scrim" data-close="1"></div><aside class="drawer" role="dialog" aria-label="${esc(x.n)}"><button class="x" data-close="1" aria-label="Close">×</button>
     <div><div class="role">${esc(PAT[x.p])}</div><h2>${esc(x.n)}</h2><p class="small muted">${x.m.map(m=>MUS[m]).filter(Boolean).join(', ')}</p></div>
+    ${planned}
     <div class="row"><button class="btn sm${fav?' primary':''}" data-fav="${x.id}">${fav?'★ Favorite':'☆ Add to favorites'}</button></div>
     ${x.c.length?`<div><h3>Cues</h3><ul>${x.c.map(q=>`<li>${esc(q)}</li>`).join('')}</ul></div>`:''}
     <div><h3>Equipment</h3><p class="small">${esc(eqNeed(x))}${avail(x)?'':' <span style="color:var(--danger)">· not in your list</span>'}</p></div>
@@ -1313,21 +1415,67 @@ function applyFitbod(){
 /* ---------------- Events ---------------- */
 function toast(t){const h=document.getElementById('toastHost');h.innerHTML=`<div class="toast" role="status">${esc(t)}</div>`;clearTimeout(toast.t);toast.t=setTimeout(()=>h.innerHTML='',2600)}
 const toggle=(arr,v)=>{const i=arr.indexOf(v);i>=0?arr.splice(i,1):arr.push(v)};
+/* ----- Drag to reorder blocks (plan and workout list). Works with mouse, touch and keyboard. ----- */
+function dropBlock(kind,from,to){
+  if(kind==='plan'&&planCache){if(moveBlockTo(planCache,from,to)){persist();render()}}
+  else if(kind==='run'&&active) editActive(pl=>moveBlockTo(pl,from,to));
+}
+let drag=null;
+document.addEventListener('pointerdown',e=>{
+  const g=e.target.closest('[data-grip]'); if(!g||e.button>0) return;
+  const item=g.closest('[data-dragitem]'), list=item&&item.closest('[data-dragkind]'); if(!list) return;
+  e.preventDefault(); g.setPointerCapture(e.pointerId);
+  const sc=item.closest('.drawer')||document.scrollingElement, top=()=>sc.scrollTop;
+  const items=[...list.querySelectorAll('[data-dragitem]')].filter(el=>el.closest('[data-dragkind]')===list);
+  const boxes=items.map(el=>{const r=el.getBoundingClientRect();return {el,i:+el.dataset.dragitem,top:r.top+top(),h:r.height}});
+  const me=boxes.find(o=>o.el===item), gap=boxes.length>1?Math.abs(boxes[1].top-boxes[0].top-boxes[0].h):8;
+  drag={g,item,list,kind:list.dataset.dragkind,sc,top,boxes,me,gap,y0:e.clientY+top(),y:e.clientY,to:me.i,raf:0};
+  item.classList.add('dragging'); document.body.classList.add('is-dragging');
+  const loop=()=>{ if(!drag) return; const r=sc===document.scrollingElement?{top:0,bottom:innerHeight}:sc.getBoundingClientRect();
+    const v=drag.y<r.top+70?-10:drag.y>r.bottom-70?10:0; if(v){sc.scrollTop+=v; place()} drag.raf=requestAnimationFrame(loop)};
+  drag.raf=requestAnimationFrame(loop);
+});
+function place(){
+  const D=drag, y=D.y+D.top(), dy=y-D.y0, mid=D.me.top+D.me.h/2+dy;
+  let to=D.me.i;
+  D.boxes.forEach(o=>{ if(o===D.me) return; const c=o.top+o.h/2; if(o.i>D.me.i&&mid>c) to=Math.max(to,o.i); if(o.i<D.me.i&&mid<c) to=Math.min(to,o.i) });
+  D.to=to; D.item.style.transform=`translateY(${dy}px)`;
+  const shift=D.me.h+D.gap;
+  D.boxes.forEach(o=>{ if(o===D.me) return; o.el.style.transform=o.i>D.me.i&&o.i<=to?`translateY(${-shift}px)`:o.i<D.me.i&&o.i>=to?`translateY(${shift}px)`:'' });
+}
+document.addEventListener('pointermove',e=>{if(!drag) return; drag.y=e.clientY; place()});
+function endDrag(commit){
+  const D=drag; if(!D) return; drag=null; cancelAnimationFrame(D.raf);
+  document.body.classList.remove('is-dragging'); D.item.classList.remove('dragging'); D.boxes.forEach(o=>o.el.style.transform='');
+  if(commit&&D.to!==D.me.i) dropBlock(D.kind,D.me.i,D.to);
+}
+document.addEventListener('pointerup',()=>endDrag(true));
+document.addEventListener('pointercancel',()=>endDrag(false));
+document.addEventListener('keydown',e=>{
+  const g=e.target.closest&&e.target.closest('[data-grip]'); if(!g||!['ArrowUp','ArrowDown'].includes(e.key)) return;
+  const item=g.closest('[data-dragitem]'), list=item.closest('[data-dragkind]'), from=+item.dataset.dragitem, to=from+(e.key==='ArrowUp'?-1:1), kind=list.dataset.dragkind;
+  e.preventDefault(); dropBlock(kind,from,to);
+  const again=document.querySelector(`[data-dragkind="${kind}"] [data-dragitem="${to}"] [data-grip]`); if(again) again.focus();
+});
+
 document.addEventListener('click',async e=>{
   const t=e.target.closest('button,[data-open],[data-close]'); if(!t) return;
   const d=t.dataset, p=state.profile;
   if(d.tab){tab=d.tab;selected=null;pendingDelete=null;try{sessionStorage.setItem('fc.tab',tab)}catch(_){};render();window.scrollTo(0,0);return}
   if(d.close){selected=null;render();return}
-  if(d.open){selected=d.open;render();return}
+  if(d.open){selected=d.open;detailAt=d.at||null;render();return}
   if(d.goex){const [b,i]=d.goex.split(':').map(Number); goExercise(b,i); return}
   if(d.goset&&active){goSet(+d.goset); return}
-  if(d.pmove&&planCache){if(moveBlock(planCache,+d.pmove,+d.v)){persist();render()} return}
   if(d.psets&&planCache){const b=planCache.blocks[+d.psets]; if(b&&setCount(planCache,+d.psets,b.items[0].d.sets+(+d.v))){persist();render()} return}
-  if(d.rmove&&active){editActive(pl=>moveBlock(pl,+d.rmove,+d.v)); return}
   if(d.rsets&&active){const bi=+d.rsets, b=active.plan.blocks[bi], n=b.items[0].d.sets+(+d.v),
     logged=Math.max(0,...active.steps.filter((st,j)=>st.b===bi&&active.log[j]).map(st=>st.s+1)); if(n<logged) return;
     editActive(pl=>setCount(pl,bi,n)); return}
-  if(d.swap){const [bi,ii]=d.swap.split(':').map(Number); if(swapIn(planCache,bi,ii)){persist();render()} return}
+  if(d.swap){const [bi,ii]=d.swap.split(':').map(Number); openPick({mode:'swap',where:'plan',b:bi,i:ii}); return}
+  if(d.rmitem&&planCache){const [bi,ii]=d.rmitem.split(':').map(Number), x=BYID[planCache.blocks[bi].items[ii].ex]; if(removeItem(planCache,bi,ii)){persist();toast(`Removed ${x.n}`);render()} return}
+  if(d.tpluse){useTemplate(d.tpluse); selected=null; render(); window.scrollTo(0,0); return}
+  if(d.tpldel){const p2=state.profile; p2.templates=(p2.templates||[]).filter(t=>t.id!==d.tpldel); pendingDelete=null; touchProfile(); render(); return}
+  if(d.pick&&picker){applyPick(d.pick); return}
+  if(d.pickall&&picker){picker.all=d.pickall==='1'; render(); return}
   if(d.fav){toggle(p.favorites,d.fav);touchProfile();render();return}
   if(d.eq){toggle(p.equipment,d.eq);touchProfile();render();return}
   if(d.rmeq){p.customEq=p.customEq.filter(x=>x.id!==d.rmeq);touchProfile();render();return}
@@ -1359,7 +1507,12 @@ document.addEventListener('click',async e=>{
     case 'restAdj': if(active&&active.rest){active.rest.plan=Math.max(5,active.rest.plan+(+d.v)); if(active.rest.plan-(Date.now()-active.rest.start)/1000>0){active.rest.beeped=false} saveActive(); tick()} return;
     case 'undo': undoSet(); return;
     case 'skipEx': skipExercise(); return;
-    case 'swapRun': {const c=curItem(); if(c&&swapIn(active.plan,c.st.b,c.st.i)){initDraft();saveActive();render()} return}
+    case 'swapRun': {const c=curItem(); if(c) openPick({mode:'swap',where:'run',b:c.st.b,i:c.st.i}); return}
+    case 'rmRun': {const c=curItem(); if(!c||loggedFor(c.it.ex).length) return; const n=c.x.n; editActive(pl=>removeItem(pl,c.st.b,c.st.i)); toast(`Removed ${n}`); return}
+    case 'templates': selected='templates'; render(); return;
+    case 'tplSave': {const n=(document.getElementById('tplName').value||'').trim(); if(!n){toast('Give the template a name');return} saveTemplate(n); selected=null; toast(`Saved template “${n}”`); render(); return}
+    case 'addEx': openPick({mode:'add',where:'plan'}); return;
+    case 'addExRun': openPick({mode:'add',where:'run'}); return;
     case 'workStart': audio(); active.work=Date.now(); active.workBeeped=false; render(); return;
     case 'endAsk': pendingDelete='END'; render(); return;
     case 'endCancel': pendingDelete=null; render(); return;
@@ -1384,6 +1537,7 @@ document.addEventListener('click',async e=>{
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&selected){selected=null;render()}});
 document.addEventListener('input',e=>{
   const t=e.target, d=t.dataset;
+  if(d.pickq&&picker){picker.q=t.value; const el=document.getElementById('picklist'); if(el) el.innerHTML=pickRows(); return}
   if(d.draft&&active&&active.draft){const v=t.value===''?null:+t.value; active.draft[d.draft]=d.draft==='w'?fromDisp(v):v; saveActive(); return}
   if(d.balance){const a=+t.value; document.getElementById('mixTxt').textContent=a<=35?'Plans lean toward muscle and shape.':a>=65?'Plans lean toward performance and sport.':'A mix of strength, power and physique work.'}
 });
