@@ -2,7 +2,7 @@
   "name": "Fitness Coach",
   "short_name": "Fitness",
   "description": "Plans gym workouts around your equipment and sports, runs them with a rest timer, and tracks your strength.",
-  "id": "./",
+  "id": "/fitness-coach/",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
