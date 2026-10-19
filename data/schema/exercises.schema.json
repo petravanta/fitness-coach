@@ -31,6 +31,7 @@
         "items": {"enum": ["power", "single", "lat", "rot", "grip", "endur", "mob", "core", "post", "shoulder"]},
         "description": "Athletic qualities it builds, used to match sports: power, single (single-leg strength), lat (lateral movement), rot (rotation), grip, endur (endurance), mob (mobility), core (trunk stability), post (posterior chain), shoulder (shoulder resilience)."
       },
+      "startWeight": {"type": "number", "exclusiveMinimum": 0, "description": "For weighted exercises without a strongRatio: a sensible first-session weight in kg (per hand when perHand is true), used until the person has history. Exercises with a strongRatio get a starting weight from their bodyweight instead."},
       "strongRatio": {"type": "number", "exclusiveMinimum": 0, "description": "Estimated max divided by bodyweight that counts as strong (a score of 100). Leave out if the exercise isn't scored."},
       "bodyweightShare": {"type": "number", "exclusiveMinimum": 0, "maximum": 1, "description": "Share of bodyweight moved in each rep, for bodyweight and loaded single-leg moves."},
       "perHand": {"type": "boolean", "description": "true when the logged weight is per hand (dumbbells, kettlebells)."},

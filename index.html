@@ -332,11 +332,11 @@ const TRACK={wr:'Weight × reps',bw:'Bodyweight reps',time:'Time'};
 // std: estimated-max ÷ bodyweight that counts as "strong" (score 100); bwf: share of bodyweight moved; per: weight is per hand;
 // reps/base: reps or seconds that count as strong for bodyweight-only or timed holds
 function E(id,n,p,m,eq,t,o={}){return{id,n,p,m:m.split(' '),eq:eq.split('|').map(s=>s==='-'?[]:s.split('+')),t,q:(o.q||'').split(' ').filter(Boolean),c:o.c||[],
-  std:o.std||null,bwf:o.bwf||0,per:!!o.per,main:!!o.main,reps:o.reps||null,base:o.base||null,sub:o.sub||null,fig:o.fig||null}}
+  std:o.std||null,bwf:o.bwf||0,per:!!o.per,main:!!o.main,reps:o.reps||null,base:o.base||null,sub:o.sub||null,fig:o.fig||null,start:o.start||null}}
 // Exercises come from data/exercises.json; the readable field names there map onto the short ones the app uses
 const TRACK_ID={'weight-reps':'wr','bodyweight-reps':'bw',time:'time'}, ARM_ID={biceps:'bi',triceps:'tri'};
 const LIB=CATALOG.exercises.map(x=>E(x.id,x.name,x.pattern,x.muscles.join(' '),x.equipment.map(o=>o.length?o.join('+'):'-').join('|'),TRACK_ID[x.tracking],
-  {std:x.strongRatio,bwf:x.bodyweightShare,per:x.perHand,main:x.mainLift,reps:x.strongReps,base:x.strongSeconds,sub:ARM_ID[x.armFocus],fig:x.figure,q:(x.qualities||[]).join(' '),c:x.cues}));
+  {std:x.strongRatio,bwf:x.bodyweightShare,per:x.perHand,main:x.mainLift,reps:x.strongReps,base:x.strongSeconds,sub:ARM_ID[x.armFocus],fig:x.figure,start:x.startWeight,q:(x.qualities||[]).join(' '),c:x.cues}));
 let EX=LIB, BYID={};
 /* ----- Exercise figures: stick figures from data/figures.json, with the gear the exercise uses drawn at the hands ----- */
 const FIG=Object.fromEntries(CATALOG.figures.map(f=>[f.id,f]));
@@ -880,7 +880,7 @@ function setCount(plan,bi,n){
 }
 // Sets shown for each exercise: the target for every set, using the suggested weight
 function targetTxt(x,d,sg){
-  if(d.secs) return `${sg&&sg.t||d.secs}s`;
+  if(d.secs) return `${sg&&sg.t||d.secs}s${sg&&sg.w?' · '+wtxt(sg.w):''}`;
   const r=sg&&sg.r||d.reps[0];
   if(x.t==='wr') return sg&&sg.w!=null?`${wtxt(sg.w)} × ${r}`:`${d.reps[0]}–${d.reps[1]} reps`;
   return `${r} reps${sg&&sg.w?' +'+wtxt(sg.w):''}`;
@@ -888,12 +888,23 @@ function targetTxt(x,d,sg){
 function setsCtl(b,bi,kind,min=1){const n=b.items[0].d.sets;
   return `<span class="setsctl"><button class="btn sm" data-${kind}="${bi}" data-v="-1" aria-label="One set fewer"${n<=min?' disabled':''}>−</button><b class="mono">${n}</b> sets<button class="btn sm" data-${kind}="${bi}" data-v="1" aria-label="One set more"${n>=10?' disabled':''}>+</button></span>`}
 const grip=`<button class="grip" data-grip="1" aria-label="Drag to reorder, or use the arrow keys" title="Drag to reorder"><svg viewBox="0 0 12 18" aria-hidden="true"><g fill="currentColor"><circle cx="3" cy="3" r="1.6"/><circle cx="9" cy="3" r="1.6"/><circle cx="3" cy="9" r="1.6"/><circle cx="9" cy="9" r="1.6"/><circle cx="3" cy="15" r="1.6"/><circle cx="9" cy="15" r="1.6"/></g></svg></button>`;
+// No history at all: a cautious first guess. Scored lifts start at the "Building" level for your bodyweight; others use the library's startWeight.
+function baseStart(x,d){
+  const guess=`Starting guess for ${wtxt(bwKg())} bodyweight. Adjust after the first set.`;
+  if(x.t==='time'&&x.std&&d.secs) return {w:roundW(x,bwKg()*x.std*.4),t:d.secs,est:true,note:guess};
+  if(x.t!=='wr'||!d.reps) return null;
+  if(x.std){const w=bwKg()*x.std*.5/(1+d.reps[1]/30)-(x.bwf?bwKg()*x.bwf:0);
+    return w>=roundW(x,0)?{w:roundW(x,w),r:d.reps[0],est:true,note:guess}:{w:null,r:d.reps[0],note:'Start with bodyweight only, then add weight once every set reaches the top of the range.'}}
+  if(x.start) return {w:roundW(x,x.start),r:d.reps[0],est:true,note:'Starting guess. Adjust after the first set.'};
+  return null;
+}
 // Progressive overload: what to aim for this time, from the last time you did it
 function suggest(x,d){
   const L=lastEntry(x.id);
   if(!L){
     const g=relatedStart(x,d);
     if(g) return {w:g.w,r:d.reps[0],est:true,note:`New exercise. From your ${g.from.map(y=>y.n).join(' and ')} (${(MUS[x.m[0]]||x.m[0]).toLowerCase()}), start around ${wtxt(g.w)} and adjust after the first set.`};
+    const b=baseStart(x,d); if(b) return b;
     return {w:null,r:d.reps?d.reps[0]:null,t:d.secs||null,note:x.t==='wr'?`First time: pick a weight you could do about ${(d.reps?d.reps[1]:10)+2} times`:''};
   }
   if(x.t==='time'){const best=Math.max(...L.sets.map(s=>s.t||0)),w=Math.max(...L.sets.map(s=>s.w||0))||null;return {w,t:best+5,note:`Last time ${best}s${w?' with '+wtxt(w):''}. Go 5s longer.`}}
