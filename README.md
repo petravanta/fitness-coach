@@ -34,7 +34,7 @@ Under *Settings → Import from Fitbod*, pick the CSV from Fitbod's *Export work
 
 Everything lives in **one file in your Google Drive**, `Fitness Coach data.json`: settings, workouts and a workout in progress. The first time you open the app it asks you to connect Google Drive; after that it saves a moment after every change, and any device you sign in on picks up the same data. The app uses the `drive.file` permission, so it can only see the file it created.
 
-The browser keeps only your Google sign-in and, while you're offline or the sign-in has lapsed, a copy of changes that haven't reached Drive yet. That copy is deleted as soon as Drive has it. Google sign-ins last about an hour; if one lapses mid-workout, the next tap renews it (Google may flash a window that closes by itself). **Export backup** under *Settings* still downloads a JSON copy.
+The browser keeps your Google sign-in and a copy of your data, so the app opens straight away even after the hour-long Google sign-in has run out; the next tap renews it (Google may flash a window that closes by itself), merges in Drive's copy and saves. One sign-in covers all of petravanta's apps on that browser. **Export backup** under *Settings* still downloads a JSON copy.
 
 *Look around without saving* lets you try the app without connecting; nothing is kept.
 
@@ -60,7 +60,7 @@ It's a static page (`index.html`, the exercise library in `data/`, plus `manifes
 
 ## Google Drive sync
 
-The storage code is the shared Drive store from [petravanta/general](https://github.com/petravanta/general) (`shared/drive-store.js`), inlined between the `Drive store` comments. When two devices have changes, every workout is kept and the most recently edited settings win.
+The storage code is the shared Drive store from [petravanta/general](https://github.com/petravanta/general) (`shared/google-token.js` and `shared/drive-store.js`), inlined between their marker comments. When two devices have changes, every workout is kept and the most recently edited settings win.
 
 It reuses Skating Mentor's OAuth client ID. That client already allows `https://petravanta.github.io`, which covers every app hosted there, so no new Google Cloud setup is needed. The Google sign-in window shows the app name set on the OAuth consent screen; rename it there (for example to *Petra's apps*) if you want one name for both apps.
 
