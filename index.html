@@ -1236,8 +1236,16 @@ function viewSettings(){
 }
 
 /* ----- Drawer: exercise detail or new exercise ----- */
+// An open drawer gets its own browser history entry, so the phone's back button closes it instead of leaving the app
+let drawerInHistory=false;
+function syncDrawerHistory(){
+  if(selected&&!drawerInHistory){history.pushState({fcDrawer:1},''); drawerInHistory=true}
+  else if(!selected&&drawerInHistory){drawerInHistory=false; if(history.state&&history.state.fcDrawer) history.back()}
+}
+window.addEventListener('popstate',()=>{ if(!drawerInHistory) return; drawerInHistory=false; if(selected){selected=null; picker=null; render()} });
 function renderDrawer(){
   const host=document.getElementById('drawerHost');
+  syncDrawerHistory();
   if(!selected){host.innerHTML='';return}
   if(selected==='runlist'&&active){
     host.innerHTML=`<div class="scrim" data-close="1"></div><aside class="drawer" role="dialog" aria-label="Exercises in this workout"><button class="x" data-close="1" aria-label="Close">×</button>
