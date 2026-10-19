@@ -356,6 +356,7 @@
     "equipment": [["cable"], ["dumbbell", "bench"]],
     "tracking": "weight-reps",
     "figure": "fly",
+    "startWeight": 10,
     "cues": [
       "Soft bend in the elbows",
       "Hug a big tree",
@@ -401,6 +402,7 @@
     "equipment": [["landmine"]],
     "tracking": "weight-reps",
     "figure": "landmine",
+    "startWeight": 15,
     "qualities": ["rot", "shoulder", "core"],
     "cues": [
       "Kneel on the side of the pressing arm",
@@ -416,6 +418,7 @@
     "equipment": [["dumbbell"], ["cable"], ["band"]],
     "tracking": "weight-reps",
     "figure": "latraise",
+    "startWeight": 4,
     "perHand": true,
     "cues": ["Lead with the elbows", "Stop at shoulder height", "Lower slowly, no swinging"]
   },
@@ -528,6 +531,7 @@
     "equipment": [["cable"], ["band"]],
     "tracking": "weight-reps",
     "figure": "facepull",
+    "startWeight": 15,
     "qualities": ["shoulder"],
     "cues": [
       "Rope to forehead height",
@@ -554,6 +558,7 @@
     "equipment": [["dumbbell"], ["cable"], ["band"]],
     "tracking": "weight-reps",
     "figure": "curl",
+    "startWeight": 8,
     "perHand": true,
     "armFocus": "biceps",
     "cues": ["Elbows pinned at your sides", "Turn the pinky up at the top", "Lower for a slow count of 3"]
@@ -566,6 +571,7 @@
     "equipment": [["dumbbell"], ["kettlebell"]],
     "tracking": "weight-reps",
     "figure": "curl",
+    "startWeight": 8,
     "qualities": ["grip"],
     "perHand": true,
     "armFocus": "biceps",
@@ -579,6 +585,7 @@
     "equipment": [["cable"], ["band"]],
     "tracking": "weight-reps",
     "figure": "pushdown",
+    "startWeight": 15,
     "armFocus": "triceps",
     "cues": ["Elbows glued to your sides", "Spread the rope at the bottom", "Only the forearms move"]
   },
@@ -590,6 +597,7 @@
     "equipment": [["dumbbell"], ["cable"]],
     "tracking": "weight-reps",
     "figure": "ohext",
+    "startWeight": 12,
     "armFocus": "triceps",
     "cues": ["Elbows point forward", "Deep stretch behind the head", "Lock out at the top"]
   },
@@ -713,6 +721,7 @@
     "equipment": [["cable"], ["band"]],
     "tracking": "weight-reps",
     "figure": "pallof",
+    "startWeight": 7.5,
     "qualities": ["rot", "core"],
     "cues": ["Stand side-on to the anchor", "Press straight out and hold", "Don’t let it twist you"]
   },
@@ -752,6 +761,7 @@
     "equipment": [["cable"], ["band"]],
     "tracking": "weight-reps",
     "figure": "chop",
+    "startWeight": 10,
     "qualities": ["rot", "power"],
     "cues": [
       "Rotate through the hips, not just the arms",
@@ -815,6 +825,7 @@
     "equipment": [["kettlebell"]],
     "tracking": "weight-reps",
     "figure": "swing",
+    "startWeight": 16,
     "qualities": ["power", "post", "endur"],
     "cues": ["Hike the bell back hard", "Snap the hips", "Bell floats to chest height"]
   },
@@ -826,6 +837,7 @@
     "equipment": [["medball"]],
     "tracking": "weight-reps",
     "figure": "throw",
+    "startWeight": 4,
     "qualities": ["power", "rot"],
     "cues": [
       "Stand side-on to a wall",
@@ -841,6 +853,7 @@
     "equipment": [["medball"]],
     "tracking": "weight-reps",
     "figure": "slam",
+    "startWeight": 6,
     "qualities": ["power", "core"],
     "cues": ["Reach up tall", "Slam with the whole body", "Hinge to pick it up"]
   },

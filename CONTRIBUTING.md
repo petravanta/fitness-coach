@@ -10,6 +10,7 @@ The easiest way to help is to add to the exercise library, the sports list or th
    - `id`: a new short id in lowercase letters, digits and hyphens. Never change the id of an exercise that's already there, because people's workout history refers to it.
    - `name`, `pattern`, `muscles` (primary muscle first), `tracking`, and `cues` (two or three short ones).
    - `equipment`: the ways to do it. `[["dumbbell", "bench"], ["dumbbell"]]` means dumbbells and a bench, or just dumbbells. `[[]]` means no equipment. Ids come from [`data/equipment.json`](data/equipment.json).
+   - For a weighted exercise without a `strongRatio`, add `startWeight`: a sensible first-session weight in kg, so the plan can show a number before there's any history.
    - Leave out the optional fields you don't need.
 4. Click **Propose changes**, then **Create pull request**. A check runs automatically and points out anything that needs fixing.
 
