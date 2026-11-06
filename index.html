@@ -338,6 +338,9 @@ const MUS={chest:'Chest',shoulders:'Shoulders',back:'Back',arms:'Arms',abs:'Abs 
 const QUAL={power:'explosive power',single:'single-leg strength',lat:'lateral movement',rot:'rotation',grip:'grip',endur:'endurance',mob:'mobility',core:'trunk stability',post:'posterior chain',shoulder:'shoulder resilience'};
 const SPORTS=Object.fromEntries(CATALOG.sports.map(s=>[s.id,{n:s.name,q:s.qualities}]));
 const EQUIP=Object.fromEntries(CATALOG.equipment.map(e=>[e.id,e.name]));
+// Calisthenics: bodyweight moves that need nothing, or only bars, rings or a box (equipment.json marks that gear)
+const CALI_EQ=new Set(CATALOG.equipment.filter(e=>e.calisthenics).map(e=>e.id));
+const isCali=x=>x.t!=='wr'&&x.eq.some(o=>o.every(e=>CALI_EQ.has(e)));
 const TRACK={wr:'Weight × reps',bw:'Bodyweight reps',time:'Time'};
 
 // E(id, name, pattern, muscles (first is primary), equipment options ("a+b|c", "-" = none), tracking, extras)
@@ -693,8 +696,8 @@ function setTxt(x,s){
 
 /* ---------------- Planning ---------------- */
 const MINUTES=[[20,'20 min'],[30,'30 min'],[45,'45 min'],[60,'60 min'],[75,'75 min'],[90,'90 min']];
-const FOCI=[['auto','Pick for me'],['full','Full body'],['upper','Upper body'],['lower','Lower body'],['push','Push'],['pull','Pull'],['sport','Athletic & sport']];
-const FOCUS_NAME={full:'Full body',upper:'Upper body',lower:'Lower body',push:'Push day',pull:'Pull day',sport:'Athletic & sport'};
+const FOCI=[['auto','Pick for me'],['full','Full body'],['upper','Upper body'],['lower','Lower body'],['push','Push'],['pull','Pull'],['sport','Athletic & sport'],['cali','Calisthenics']];
+const FOCUS_NAME={full:'Full body',upper:'Upper body',lower:'Lower body',push:'Push day',pull:'Pull day',sport:'Athletic & sport',cali:'Calisthenics'};
 // Blocks in each kind of workout. a/b = patterns for one exercise or a superset pair; pri = what gets cut first when time is short (higher goes first)
 const TPL={
   full:[{r:'main',a:['squat','hinge'],pri:1},{r:'acc',a:['hpush','vpush'],b:['hpull','vpull'],pri:2},{r:'acc',a:['single'],b:['core'],pri:3},{r:'acc',a:['shoulder'],b:['carry'],pri:6}],
@@ -702,6 +705,7 @@ const TPL={
   lower:[{r:'main',a:['squat'],pri:1},{r:'main',a:['hinge'],pri:2},{r:'acc',a:['single'],b:['core'],pri:3},{r:'acc',a:['calves'],b:['core'],pri:6}],
   push:[{r:'main',a:['hpush'],pri:1},{r:'main',a:['vpush'],pri:2},{r:'acc',a:['hpush','vpush'],b:['arms.tri'],pri:3},{r:'acc',a:['shoulder'],b:['core'],pri:5}],
   pull:[{r:'main',a:['vpull'],pri:1},{r:'main',a:['hpull'],pri:2},{r:'acc',a:['hinge'],b:['arms.bi'],pri:3},{r:'acc',a:['carry'],b:['shoulder'],pri:5}],
+  cali:[{r:'main',a:['vpull'],b:['hpush'],pri:1},{r:'acc',a:['single'],b:['core'],pri:2},{r:'acc',a:['vpush','hpush'],b:['hpull','vpull'],pri:3},{r:'acc',a:['squat','hinge'],b:['core'],pri:4},{r:'power',a:['power'],pri:5}],
   sport:[{r:'power',a:['power'],b:['power'],pri:1},{r:'acc',a:['single'],b:['core'],pri:2},{r:'main',a:['squat','hinge'],pri:3},{r:'acc',a:['carry'],b:['shoulder'],pri:4},{r:'cond',a:['cond'],pri:5}]
 };
 const ORDER={warm:0,power:1,main:2,acc:3,sport:4,look:5,cond:6};
@@ -747,13 +751,14 @@ function scoreEx(x,role,ctx){
   s+=a*x.q.reduce((t,q)=>t+(ctx.q[q]||0),0)/2.5;
   s+=(1-a)*(p.muscles.includes(x.m[0])?1.5:0)+(1-a)*x.m.slice(1).filter(m=>p.muscles.includes(m)).length*.4;
   if(role==='main'&&x.main) s+=2.5;
+  if(p.cali) s+=isCali(x)?2.5:-1;
   if(role==='main'&&x.t==='time') s-=5;
   const dx=ctx.rec.ex[x.id]; if(dx!=null&&dx<2) s-=1.5;
   const dp=ctx.rec.pat[x.p]; s+=Math.min(dp==null?7:dp,7)*.2;
   return s;
 }
 function pick(slot,role,ctx){
-  const h=ctx.has, list=EX.filter(x=>avail(x,h)&&!ctx.used.has(x.id)&&matchPat(x,slot)&&(role==='warm'||x.p!=='mob'));
+  const h=ctx.has, list=EX.filter(x=>avail(x,h)&&!ctx.used.has(x.id)&&matchPat(x,slot)&&(role==='warm'||x.p!=='mob')&&(!ctx.cali||role==='warm'||isCali(x)));
   const ranked=list.map(x=>({x,s:scoreEx(x,role,ctx)})).sort((a,b)=>b.s-a.s).map(o=>o.x.id);
   if(!ranked.length) return null;
   ctx.used.add(ranked[0]);
@@ -768,7 +773,7 @@ function chooseFocus(rec){
 }
 function buildPlan(seed){
   const p=state.profile, rec=recency(), focus=chooseFocus(rec), q=sportQ(), a=athletic();
-  const ctx={seed,rec,q,used:new Set(),has:has()};
+  const ctx={seed,rec,q,used:new Set(),has:focus==='cali'?new Set([...has()].filter(e=>CALI_EQ.has(e))):has(),cali:focus==='cali'};
   const topQ=Object.entries(q).sort((x,y)=>y[1]-x[1]).map(e=>e[0]);
   const specs=TPL[focus].map((t,i)=>({...t,o:i}));
   // Athletic emphasis adds jumps/throws and a sport carry-over block; physique emphasis adds work for the muscles you prioritised
@@ -810,17 +815,19 @@ function buildPlan(seed){
     else if(focus==='full') why.push('Upper and lower body both have had a couple of days off, so today is full body.');
     else why.push(focus==='upper'?`Legs were trained ${Math.round(Math.min(...lastLow))||'0'} day(s) ago, so today is upper body.`:`Upper body was trained ${Math.round(Math.min(...lastUp))||'0'} day(s) ago, so today is lower body.`);
   }
+  if(focus==='cali') why.push(`Calisthenics day: bodyweight moves only${[...ctx.has].length?', using your '+[...ctx.has].map(e=>EQUIP[e].toLowerCase()).join(', '):''}.`);
+  else if(p.cali) why.push('Your calisthenics goal favors bodyweight moves.');
   if(p.sports.length&&a>=.35&&topQ.length) why.push(`${p.ctx.sport!=='all'&&SPORTS[p.ctx.sport]?SPORTS[p.ctx.sport].n:p.sports.map(s=>SPORTS[s]?SPORTS[s].n:s).join(' and ')} calls for ${topQ.slice(0,2).map(k=>QUAL[k]).join(' and ')}.`);
   if(keep.some(b=>b.items.length>1)) why.push('Paired exercises are supersets: alternate them and rest after the pair to save time.');
   return {focus,seed,blocks:keep,est:total,why:why.join(' ')};
 }
 function pickQ(slot,qual,role,ctx){
-  const h=ctx.has, list=EX.filter(x=>avail(x,h)&&!ctx.used.has(x.id)&&matchPat(x,slot)&&x.q.includes(qual)&&x.p!=='mob');
+  const h=ctx.has, list=EX.filter(x=>avail(x,h)&&!ctx.used.has(x.id)&&matchPat(x,slot)&&x.q.includes(qual)&&x.p!=='mob'&&(!ctx.cali||isCali(x)));
   if(!list.length) return pick(slot,role,ctx);
   const ranked=list.map(x=>({x,s:scoreEx(x,role,ctx)})).sort((a,b)=>b.s-a.s).map(o=>o.x.id);
   ctx.used.add(ranked[0]); return {ex:ranked[0],alts:ranked.slice(1,8)};
 }
-function ctxKey(){const p=state.profile;return JSON.stringify([new Date().toDateString(),p.ctx,p.equipment,p.customEq,p.favorites,p.sports,p.muscles,p.balance,p.rest,p.units,state.sessions.filter(s=>!s.routine).length,(p.customEx||[]).length])}
+function ctxKey(){const p=state.profile;return JSON.stringify([new Date().toDateString(),p.ctx,p.equipment,p.customEq,p.favorites,p.sports,p.muscles,p.balance,p.cali,p.rest,p.units,state.sessions.filter(s=>!s.routine).length,(p.customEx||[]).length])}
 function getPlan(){
   const key=ctxKey();
   if(planCache&&planCache.key===key&&planCache.blocks&&planCache.blocks.every(b=>b.items.every(it=>BYID[it.ex]))) return planCache;
@@ -1327,6 +1334,8 @@ function viewGear(){
     <section class="panel stack"><h3>Goals</h3>
       <div><div class="row" style="justify-content:space-between;font-size:13px;font-weight:600"><span>Look: muscle &amp; shape</span><span>Perform: power &amp; sport</span></div>
       <input type="range" min="0" max="100" step="5" value="${a}" data-balance="1" aria-label="Balance between look and performance"><p class="small muted" id="mixTxt">${esc(mix)}</p></div>
+      <div class="stack" style="gap:8px"><div class="row"><button class="chip" data-act="cali" aria-pressed="${!!p.cali}">Calisthenics ${p.cali?'on':'off'}</button></div>
+        <p class="small muted">Train bodyweight skills as a goal of its own: plans favor push-ups, pull-ups, dips, pistols and holds over weights. Pick <b>Calisthenics</b> as the focus on Today for a bodyweight-only day, or try the circuits under Warm-up &amp; mobility.</p></div>
       <div class="stack" style="gap:8px"><span class="small" style="font-weight:600">Muscles to prioritise</span><div class="chips">${Object.entries(MUS).map(([k,n])=>`<button class="chip" data-mus="${k}" aria-pressed="${p.muscles.includes(k)}">${esc(n)}</button>`).join('')}</div></div>
     </section>
     <section class="panel stack"><h3>Sports to cross-train for</h3>
@@ -1717,6 +1726,7 @@ document.addEventListener('click',async e=>{
       const m=[...document.querySelectorAll('[data-nxm]:checked')].map(i=>i.dataset.nxm), eq=[...document.querySelectorAll('[data-nxe]:checked')].map(i=>i.dataset.nxe);
       const c={id:'cx'+uid6(),n,p:document.getElementById('nx-p').value,t:document.getElementById('nx-t').value,m,eq,c:document.getElementById('nx-c').value.split('\n').map(s=>s.trim()).filter(Boolean)};
       p.customEx=p.customEx||[]; p.customEx.push(c); p.favorites.push(c.id); touchProfile(); rebuildLibrary(); selected=c.id; toast('Added to your exercises and favorites'); render(); return}
+    case 'cali': p.cali=!p.cali; if(!p.cali&&p.ctx.focus==='cali') p.ctx.focus='auto'; else if(p.cali&&p.ctx.focus==='auto') p.ctx.focus='cali'; touchProfile(); render(); return;
     case 'sound': p.sound=!p.sound; saveProfile(); render(); if(p.sound) beep(); return;
     case 'resetAsk': pendingDelete='ALL'; render(); return;
     case 'resetYes': state={profile:defaultProfile(),sessions:[],deleted:state.deleted.concat(state.sessions.map(s=>s.id))}; active=null; pendingDelete=null; planCache=null; saveProfile(); rebuildLibrary(); toast('Everything erased'); render(); return;
