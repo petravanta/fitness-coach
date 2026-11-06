@@ -61,6 +61,22 @@
     ]
   },
   {
+    "id": "horse",
+    "name": "Horse stance hold",
+    "pattern": "squat",
+    "muscles": ["quads", "adductors", "glutes"],
+    "equipment": [[]],
+    "tracking": "time",
+    "figure": "horse",
+    "qualities": ["lat", "mob"],
+    "strongSeconds": 90,
+    "cues": [
+      "Feet wide, toes turned out a little",
+      "Sit until your thighs are near parallel, knees over toes",
+      "Chest up, weight between your heels"
+    ]
+  },
+  {
     "id": "dl",
     "name": "Deadlift",
     "pattern": "hinge",
@@ -156,6 +172,21 @@
     ]
   },
   {
+    "id": "bridge",
+    "name": "Glute bridge",
+    "pattern": "hinge",
+    "muscles": ["glutes", "hams"],
+    "equipment": [[]],
+    "tracking": "bodyweight-reps",
+    "figure": "bridge",
+    "qualities": ["post"],
+    "cues": [
+      "Feet flat, close to your hips",
+      "Squeeze the glutes to lift, ribs down",
+      "Pause at the top for a second"
+    ]
+  },
+  {
     "id": "slrdl",
     "name": "Single-leg RDL",
     "pattern": "single",
@@ -223,7 +254,7 @@
     "id": "latlunge",
     "name": "Lateral lunge",
     "pattern": "single",
-    "muscles": ["quads", "glutes"],
+    "muscles": ["quads", "glutes", "adductors"],
     "equipment": [[], ["dumbbell"], ["kettlebell"]],
     "tracking": "weight-reps",
     "figure": "latlunge",
@@ -268,6 +299,24 @@
       "Free leg straight out front",
       "Sit all the way down under control",
       "Hold a doorframe at first"
+    ]
+  },
+  {
+    "id": "cossack",
+    "name": "Cossack squat",
+    "pattern": "single",
+    "muscles": ["quads", "adductors", "glutes"],
+    "equipment": [[]],
+    "tracking": "bodyweight-reps",
+    "figure": "latlunge",
+    "qualities": ["lat", "mob", "single"],
+    "strongRatio": 1.4,
+    "bodyweightShare": 0.85,
+    "eachSide": true,
+    "cues": [
+      "Wide stance, sit down into one hip",
+      "Straight leg turns its toes up",
+      "Heel of the bent leg stays down"
     ]
   },
   {
@@ -364,6 +413,23 @@
     ]
   },
   {
+    "id": "archer",
+    "name": "Archer push-up",
+    "pattern": "hpush",
+    "muscles": ["chest", "arms", "abs"],
+    "equipment": [[]],
+    "tracking": "bodyweight-reps",
+    "figure": "pushup",
+    "qualities": ["core"],
+    "strongRatio": 1.6,
+    "bodyweightShare": 0.8,
+    "cues": [
+      "Hands wide, shift over one arm",
+      "Other arm stays almost straight",
+      "Alternate sides each rep"
+    ]
+  },
+  {
     "id": "ohp",
     "name": "Overhead press",
     "pattern": "vpush",
@@ -421,6 +487,22 @@
     "startWeight": 4,
     "perHand": true,
     "cues": ["Lead with the elbows", "Stop at shoulder height", "Lower slowly, no swinging"]
+  },
+  {
+    "id": "pikepush",
+    "name": "Pike push-up",
+    "pattern": "vpush",
+    "muscles": ["shoulders", "arms"],
+    "equipment": [[]],
+    "tracking": "bodyweight-reps",
+    "figure": "pike",
+    "qualities": ["shoulder"],
+    "strongReps": 15,
+    "cues": [
+      "Hips high, body in an upside-down V",
+      "Lower the top of your head toward your hands",
+      "Feet on a box to make it harder"
+    ]
   },
   {
     "id": "row",
@@ -686,7 +768,7 @@
     "id": "copen",
     "name": "Copenhagen plank",
     "pattern": "core",
-    "muscles": ["abs"],
+    "muscles": ["abs", "adductors"],
     "equipment": [["bench"]],
     "tracking": "time",
     "figure": "copen",
@@ -767,6 +849,38 @@
       "Rotate through the hips, not just the arms",
       "Arms long",
       "Control the return"
+    ]
+  },
+  {
+    "id": "hollow",
+    "name": "Hollow body hold",
+    "pattern": "core",
+    "muscles": ["abs"],
+    "equipment": [[]],
+    "tracking": "time",
+    "figure": "hollow",
+    "qualities": ["core"],
+    "strongSeconds": 60,
+    "cues": [
+      "Low back pressed into the floor",
+      "Arms and legs long, just off the floor",
+      "Bend the knees to make it easier"
+    ]
+  },
+  {
+    "id": "lsit",
+    "name": "L-sit",
+    "pattern": "core",
+    "muscles": ["abs", "arms"],
+    "equipment": [["dip"], []],
+    "tracking": "time",
+    "figure": "lsit",
+    "qualities": ["core"],
+    "strongSeconds": 30,
+    "cues": [
+      "Push down hard, shoulders away from ears",
+      "Legs straight out in front",
+      "Tuck the knees to start"
     ]
   },
   {
@@ -944,6 +1058,7 @@
     "tracking": "time",
     "figure": "stretch",
     "qualities": ["mob", "rot"],
+    "eachSide": true,
     "cues": ["Deep lunge, elbow to instep", "Rotate and reach to the sky", "Alternate sides"]
   },
   {
@@ -955,6 +1070,7 @@
     "tracking": "time",
     "figure": "openbook",
     "qualities": ["mob", "rot", "shoulder"],
+    "eachSide": true,
     "cues": [
       "Lie on your side, knees stacked",
       "Open the top arm across",
@@ -970,6 +1086,7 @@
     "tracking": "time",
     "figure": "ankle",
     "qualities": ["mob", "single"],
+    "eachSide": true,
     "cues": ["Half-kneeling, front heel down", "Drive the knee past the toes", "Slow rocks, no bouncing"]
   },
   {
@@ -996,10 +1113,151 @@
     "tracking": "time",
     "figure": "couch",
     "qualities": ["mob"],
+    "eachSide": true,
     "cues": [
       "Back knee against a wall or bench",
       "Squeeze the glute",
       "Stay tall"
+    ]
+  },
+  {
+    "id": "legswing",
+    "name": "Leg swings",
+    "pattern": "mob",
+    "muscles": ["hams", "glutes", "adductors"],
+    "equipment": [[]],
+    "tracking": "time",
+    "figure": "legswing",
+    "qualities": ["mob", "lat"],
+    "eachSide": true,
+    "cues": [
+      "Hold a wall or rail for balance",
+      "Swing front to back, then side to side",
+      "Let the range grow with each swing"
+    ]
+  },
+  {
+    "id": "hipcar",
+    "name": "Hip circles",
+    "pattern": "mob",
+    "muscles": ["glutes", "adductors"],
+    "equipment": [[]],
+    "tracking": "time",
+    "figure": "hipcar",
+    "qualities": ["mob", "single"],
+    "eachSide": true,
+    "cues": [
+      "Stand tall, a hand on the wall",
+      "Knee up, out to the side, then back and down",
+      "Slow and as big as you can, pelvis still"
+    ]
+  },
+  {
+    "id": "rockback",
+    "name": "Adductor rock-backs",
+    "pattern": "mob",
+    "muscles": ["adductors", "glutes"],
+    "equipment": [[]],
+    "tracking": "time",
+    "figure": "frog",
+    "qualities": ["mob", "lat"],
+    "eachSide": true,
+    "cues": [
+      "On all fours, one leg straight out to the side",
+      "Rock your hips back toward your heel",
+      "Keep that foot flat and your back long"
+    ]
+  },
+  {
+    "id": "frog",
+    "name": "Frog stretch",
+    "pattern": "mob",
+    "muscles": ["adductors", "glutes"],
+    "equipment": [[]],
+    "tracking": "time",
+    "figure": "frog",
+    "qualities": ["mob", "lat"],
+    "cues": [
+      "Knees wide, ankles in line with the knees",
+      "On your forearms, ease the hips back",
+      "Breathe out and let the groin relax"
+    ]
+  },
+  {
+    "id": "butterfly",
+    "name": "Butterfly stretch",
+    "pattern": "mob",
+    "muscles": ["adductors"],
+    "equipment": [[]],
+    "tracking": "time",
+    "figure": "butterfly",
+    "qualities": ["mob"],
+    "cues": [
+      "Soles together, heels close in",
+      "Sit tall and lean forward from the hips",
+      "Let the knees drop, don’t push them"
+    ]
+  },
+  {
+    "id": "pigeon",
+    "name": "Pigeon stretch",
+    "pattern": "mob",
+    "muscles": ["glutes"],
+    "equipment": [[]],
+    "tracking": "time",
+    "figure": "pigeon",
+    "qualities": ["mob", "rot"],
+    "eachSide": true,
+    "cues": [
+      "Front shin across, back leg long behind",
+      "Square your hips to the floor",
+      "Walk the hands forward to go deeper"
+    ]
+  },
+  {
+    "id": "hamstretch",
+    "name": "Half-kneeling hamstring stretch",
+    "pattern": "mob",
+    "muscles": ["hams"],
+    "equipment": [[]],
+    "tracking": "time",
+    "figure": "hamstretch",
+    "qualities": ["mob", "post"],
+    "eachSide": true,
+    "cues": [
+      "Front leg straight, toes up",
+      "Hinge forward with a flat back",
+      "Reach for the shin, not the toes"
+    ]
+  },
+  {
+    "id": "catcow",
+    "name": "Cat-cow",
+    "pattern": "mob",
+    "muscles": ["back", "abs"],
+    "equipment": [[]],
+    "tracking": "time",
+    "figure": "catcow",
+    "qualities": ["mob"],
+    "cues": [
+      "On all fours, hands under shoulders",
+      "Round up as you breathe out, arch as you breathe in",
+      "Move one segment at a time"
+    ]
+  },
+  {
+    "id": "squatassist",
+    "name": "Assisted deep squat",
+    "pattern": "mob",
+    "muscles": ["quads", "glutes", "adductors"],
+    "equipment": [[]],
+    "tracking": "time",
+    "figure": "squatassist",
+    "qualities": ["mob"],
+    "cues": [
+      "Hold a post, door frame or rail",
+      "Sit all the way down, heels flat",
+      "Lean on your arms less over time"
     ]
   },
   {
@@ -1012,5 +1270,35 @@
     "figure": "deepsq",
     "qualities": ["mob"],
     "cues": ["Heels down", "Elbows push the knees out", "Breathe into the bottom"]
+  },
+  {
+    "id": "squatpry",
+    "name": "Goblet squat pry",
+    "pattern": "mob",
+    "muscles": ["quads", "glutes", "adductors"],
+    "equipment": [["kettlebell"], ["dumbbell"]],
+    "tracking": "time",
+    "figure": "squatpry",
+    "qualities": ["mob"],
+    "cues": [
+      "Light weight held at your chest",
+      "Elbows push the knees wide",
+      "Shift slowly side to side at the bottom"
+    ]
+  },
+  {
+    "id": "childpose",
+    "name": "Child’s pose",
+    "pattern": "mob",
+    "muscles": ["back"],
+    "equipment": [[]],
+    "tracking": "time",
+    "figure": "childpose",
+    "qualities": ["mob"],
+    "cues": [
+      "Knees wide, sit back on your heels",
+      "Reach your arms long in front",
+      "Breathe into your lower back"
+    ]
   }
 ]
