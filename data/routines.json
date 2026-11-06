@@ -1,0 +1,108 @@
+[
+  {
+    "id": "pre-skate",
+    "name": "Pre-skate warm-up",
+    "kind": "warmup",
+    "sports": ["skate"],
+    "about": "Opens the hips and groin and wakes up the legs before you step on the ice. No equipment, so you can do it rinkside.",
+    "steps": [
+      {"exercise": "legswing", "seconds": 30},
+      {"exercise": "hipcar", "seconds": 30},
+      {"exercise": "rockback", "seconds": 30},
+      {"exercise": "cossack", "reps": 5},
+      {"exercise": "wgs", "seconds": 30},
+      {"exercise": "ankle", "seconds": 30},
+      {"exercise": "bound", "reps": 8}
+    ]
+  },
+  {
+    "id": "gym-warmup",
+    "name": "General warm-up",
+    "kind": "warmup",
+    "about": "Five easy minutes that loosen the spine, hips and shoulders before any training.",
+    "steps": [
+      {"exercise": "catcow", "seconds": 30},
+      {"exercise": "wgs", "seconds": 30},
+      {"exercise": "legswing", "seconds": 20},
+      {"exercise": "openbook", "seconds": 30},
+      {"exercise": "bridge", "reps": 12},
+      {"exercise": "deepsq", "seconds": 30}
+    ]
+  },
+  {
+    "id": "daily-hips",
+    "name": "Daily hip mobility",
+    "kind": "mobility",
+    "sports": ["skate"],
+    "about": "Wide, open hips for skating: inner thighs, hip rotation and hip flexors. Do it most days, on its own or after training.",
+    "steps": [
+      {"exercise": "w9090", "seconds": 45},
+      {"exercise": "frog", "seconds": 60},
+      {"exercise": "rockback", "seconds": 30},
+      {"exercise": "pigeon", "seconds": 45},
+      {"exercise": "couch", "seconds": 45},
+      {"exercise": "butterfly", "seconds": 60},
+      {"exercise": "deepsq", "seconds": 60}
+    ]
+  },
+  {
+    "id": "deep-squat",
+    "name": "Deep squat progression",
+    "kind": "mobility",
+    "sports": ["skate"],
+    "about": "Builds a comfortable, heels-down deep squat. Hold onto something until you can sit in the bottom for a minute on your own.",
+    "steps": [
+      {"exercise": "ankle", "seconds": 30},
+      {"exercise": "squatassist", "seconds": 60},
+      {"exercise": "deepsq", "seconds": 45},
+      {"exercise": "squatpry", "seconds": 45},
+      {"exercise": "cossack", "reps": 5}
+    ]
+  },
+  {
+    "id": "post-skate",
+    "name": "Post-skate stretch",
+    "kind": "stretch",
+    "sports": ["skate"],
+    "about": "Long, easy holds for the groin, hips and hamstrings after skating, while you're still warm.",
+    "steps": [
+      {"exercise": "butterfly", "seconds": 60},
+      {"exercise": "pigeon", "seconds": 45},
+      {"exercise": "couch", "seconds": 45},
+      {"exercise": "hamstretch", "seconds": 45},
+      {"exercise": "frog", "seconds": 45},
+      {"exercise": "childpose", "seconds": 60}
+    ]
+  },
+  {
+    "id": "skater-circuit",
+    "name": "Skater bodyweight circuit",
+    "kind": "calisthenics",
+    "sports": ["skate"],
+    "about": "Single-leg strength, side-to-side power and a strong low stance, with no equipment. Good on days off the ice.",
+    "rounds": 3,
+    "rest": 60,
+    "steps": [
+      {"exercise": "skatersq", "reps": 6},
+      {"exercise": "cossack", "reps": 6},
+      {"exercise": "bound", "reps": 10},
+      {"exercise": "horse", "seconds": 40},
+      {"exercise": "sideplank", "seconds": 30}
+    ]
+  },
+  {
+    "id": "bodyweight-basics",
+    "name": "Bodyweight basics",
+    "kind": "calisthenics",
+    "about": "A full-body calisthenics circuit you can do anywhere: push, squat, press and hold.",
+    "rounds": 3,
+    "rest": 60,
+    "steps": [
+      {"exercise": "pushup", "reps": 10},
+      {"exercise": "cossack", "reps": 6},
+      {"exercise": "pikepush", "reps": 8},
+      {"exercise": "bridge", "reps": 12},
+      {"exercise": "hollow", "seconds": 30}
+    ]
+  }
+]
