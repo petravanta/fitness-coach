@@ -12,6 +12,7 @@ It runs in any modern browser on phone or desktop. To get started:
 1. Go to **Gear & goals**: tick your equipment, pick the sports you cross-train for, star the muscles you want to prioritise, and set the slider between *Look* (muscle and shape) and *Perform* (power and sport).
 2. On **Exercises**, star your favorites. Plans pick them more often. **Add your own** for anything missing.
 3. On **Today**, choose how long you have and a focus (or let it pick), then **Start workout**.
+4. On **Warm-up & mobility**, start a routine on its own any time: a pre-skate warm-up, daily hip mobility, a post-skate stretch or a bodyweight circuit.
 
 On a phone, add it to your home screen (see *On your phone* below).
 
@@ -23,6 +24,8 @@ On a phone, add it to your home screen (see *On your phone* below).
 - **Progressive overload.** Each exercise suggests a weight and reps from last time: add weight when you hit the top of the rep range on every set, otherwise add a rep. For an exercise you haven't done yet, it estimates a starting weight from your recent lifts for the same muscle and movement, a little on the light side. With no history at all, scored lifts start from a cautious guess based on your bodyweight (set it in Settings), and other weighted exercises from a sensible first weight in the library.
 - **Shape the workout.** Every set is listed with its target. Drag blocks by their handle to reorder them (on the plan and during a workout), change the number of sets, swap an exercise from a searchable list, remove one, or add any exercise. During a workout you can also add or remove a set and tap any set to do or redo it. Tap an exercise on the plan to see its cues, planned sets and suggested weight before you start.
 - **Pictures.** Every exercise has a small drawing that shows the movement, with the gear you'll use (barbell, dumbbells, kettlebell, cable or band) drawn in.
+- **Calisthenics as a goal.** Turn on *Calisthenics* under *Gear & goals* and plans favor bodyweight moves (pull-ups, push-up variations, pistols, holds) over weights. Pick *Calisthenics* as the focus on **Today** for a bodyweight-only day that uses only gear marked `calisthenics` in `equipment.json` (pull-up bar, dip bars, rings, box).
+- **Warm-up & mobility on its own.** The *Warm-up & mobility* tab has routines you start without a workout: warm-ups, mobility, stretching and bodyweight circuits, with the ones for your sports first (skating has a pre-skate warm-up, daily hip mobility for wide hips and the groin, a deep squat progression, a post-skate stretch and a skater circuit). They run in the same set-by-set runner; timed holds done on each side beep when it's time to switch. Routines are saved to your history but don't count as workouts or change today's plan. Other apps can link straight to one with `https://petravanta.github.io/fitness-coach/#routine=<id>` (for example `#routine=pre-skate`), or to the tab with `#mobility`.
 - **Templates.** Save a plan you like under **Templates** and load it again later. It keeps exercises, order, sets and rest, and weights are suggested fresh from your history each time.
 - **Progress.** Per exercise: estimated 1-rep max (or best reps or time) over time. Per movement: a *movement strength* score for squat, hinge, single-leg, horizontal and vertical push and pull, carry and core, compared with bodyweight standards. Plus weekly sets per muscle and how well you kept to your rest times.
 
@@ -50,6 +53,7 @@ What the coach knows lives in plain JSON files under [`data/`](data/), separate 
 | --- | --- | --- | --- |
 | Exercises | [`data/exercises.json`](data/exercises.json) | [`exercises.schema.json`](data/schema/exercises.schema.json) | The exercise library: movement pattern, muscles, equipment options, how sets are logged, strength standards and coaching cues |
 | Sports | [`data/sports.json`](data/sports.json) | [`sports.schema.json`](data/schema/sports.schema.json) | Sports you can cross-train for, and how much each relies on power, single-leg strength, rotation and so on |
+| Routines | [`data/routines.json`](data/routines.json) | [`routines.schema.json`](data/schema/routines.schema.json) | Warm-up, mobility, stretching and bodyweight routines you can start on their own, and the sports each is for |
 | Equipment | [`data/equipment.json`](data/equipment.json) | [`equipment.schema.json`](data/schema/equipment.schema.json) | Equipment you can tick under *Gear & goals* |
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for how to add an entry.

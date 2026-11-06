@@ -31,6 +31,23 @@ Here is a complete example:
 }
 ```
 
+## Add a warm-up, mobility or stretching routine
+
+Routines live in [`data/routines.json`](data/routines.json) and are explained in [`data/schema/routines.schema.json`](data/schema/routines.schema.json). People start them on their own from the *Warm-up & mobility* tab, without a workout. A routine has a `kind` (`warmup`, `mobility`, `stretch` or `calisthenics`), the `sports` it's for, a short `about`, and `steps`, each an exercise id with `seconds` (for exercises tracked as time) or `reps`. Add `rounds` and `rest` to make it a circuit. If a move doesn't exist yet, add it to `exercises.json` first, usually with pattern `mob`, tracking `time`, and `"eachSide": true` when it's done on the left and then the right.
+
+```json
+{
+  "id": "pre-skate",
+  "name": "Pre-skate warm-up",
+  "kind": "warmup",
+  "sports": ["skate"],
+  "about": "Opens the hips and groin and wakes up the legs before you step on the ice.",
+  "steps": [{"exercise": "legswing", "seconds": 30}, {"exercise": "cossack", "reps": 5}]
+}
+```
+
+Routine ids are part of links from other apps (`fitness-coach/#routine=pre-skate`), so never change one that has shipped.
+
 ## Add or change an exercise drawing
 
 Each exercise can name a drawing with `"figure"`. Drawings live in [`data/figures.json`](data/figures.json) and are explained in [`data/schema/figures.schema.json`](data/schema/figures.schema.json): a stick figure on a 48 × 48 grid (head, limbs as lines of x,y points, and where the hands hold the weight). The app adds the gear the exercise uses, so one drawing works for the barbell and dumbbell versions. Several exercises can share a drawing, and an exercise without one gets a drawing for its movement pattern.
@@ -48,5 +65,6 @@ Anything you can describe with the existing fields is data. A new movement patte
 ```sh
 node scripts/check-data.js     # unique ids, equipment and figures exist
 npx ajv-cli@5 validate --spec=draft2020 -s data/schema/exercises.schema.json -d data/exercises.json
+npx ajv-cli@5 validate --spec=draft2020 -s data/schema/routines.schema.json -d data/routines.json
 python3 -m http.server         # then open http://localhost:8000
 ```
