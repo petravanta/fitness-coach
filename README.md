@@ -71,3 +71,7 @@ It reuses Skating Mentor's OAuth client ID. That client already allows `https://
 ## Shared look
 
 The CSS between `Shared look` and `end shared look` is the same set of colors, fonts and components as Skating Mentor. Each app only overrides the `--accent` values below that block (pink for Skating Mentor, indigo here).
+
+## License
+
+MIT, see [LICENSE](LICENSE).
