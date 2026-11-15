@@ -1084,9 +1084,9 @@ const ALARM_TAG='fc-timer';
 let armedKey='';
 function pendingAlarm(){
   if(!active) return null; const c=curItem();
-  if(active.phase==='rest'&&active.rest&&!active.rest.beeped){const r=active.rest;
+  if(active.phase==='rest'&&active.rest){const r=active.rest;
     return {at:r.start+r.plan*1000,title:r.move?'Move to the next exercise':'Rest is over',body:c?`Next: ${c.x.n}`:'Time for your next set'}}
-  if(active.work&&!active.workBeeped&&c){const tgt=(c.it.d.secs||0)*(c.x.side?2:1); if(tgt) return {at:active.work+tgt*1000,title:'Time’s up',body:`${c.x.n}: hold done`}}
+  if(active.work&&c){const tgt=(c.it.d.secs||0)*(c.x.side?2:1); if(tgt) return {at:active.work+tgt*1000,title:'Time’s up',body:`${c.x.n}: hold done`}}
   return null;
 }
 function toSW(msg){navigator.serviceWorker.ready.then(r=>r.active&&r.active.postMessage(msg)).catch(()=>{})}
@@ -1096,22 +1096,44 @@ function syncAlarm(){
   if(key===armedKey) return; armedKey=key;
   toSW(a?{type:'alarm',...a,silent:!state.profile.sound}:{type:'alarm'});
 }
+const BUZZ=[600,200,600,200,600,200,1000];
+// Loud alarm (opt-in): an audio file of silence that ends in the alarm, started when the timer starts. Phones keep playing
+// media with the screen locked, so it rings when nothing else would. The catch: it takes audio focus, so music pauses.
+let loudEl=null, loudKey='', loudUrl='';
+function alarmWav(wait){
+  const sr=8000, ring=8, n=Math.round((wait+ring)*sr), b=new Uint8Array(44+n), v=new DataView(b.buffer), w=(o,t)=>[...t].forEach((ch,i)=>b[o+i]=ch.charCodeAt(0));
+  w(0,'RIFF');v.setUint32(4,36+n,true);w(8,'WAVEfmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);
+  v.setUint32(24,sr,true);v.setUint32(28,sr,true);v.setUint16(32,1,true);v.setUint16(34,8,true);w(36,'data');v.setUint32(40,n,true);
+  b.fill(128,44);
+  for(let r=0;r<4;r++)for(let k=0;k<3;k++){const t0=Math.round((wait+r*2+k*.3)*sr);
+    for(let i=0;i<.2*sr&&t0+i<n;i++){const env=Math.min(1,i/80,(.2*sr-i)/80);b[44+t0+i]=128+Math.round(110*env*Math.sign(Math.sin(2*Math.PI*988*i/sr)))}}
+  return new Blob([b],{type:'audio/wav'});
+}
+function syncLoud(){
+  const a=state.profile.loud&&state.profile.sound&&pendingAlarm(), key=a?a.at+'':'';
+  if(key===loudKey) return; loudKey=key;
+  if(loudEl){loudEl.pause();loudEl=null} if(loudUrl){URL.revokeObjectURL(loudUrl);loudUrl=''}
+  const wait=a?(a.at-Date.now())/1000:0; if(wait<=0) return;
+  loudUrl=URL.createObjectURL(alarmWav(wait)); loudEl=new Audio(loudUrl);
+  try{if('mediaSession' in navigator) navigator.mediaSession.metadata=new MediaMetadata({title:a.title.replace('is over','timer'),artist:'Fitness Coach'})}catch(e){}
+  loudEl.play().catch(()=>{loudEl=null});
+}
 function alarmNote(title,body){
   if(!alertsOn()||document.visibilityState==='visible') return;
   navigator.serviceWorker.ready.then(r=>r.showNotification(title,{body,tag:ALARM_TAG,icon:'icon-192.png',badge:'icon-192.png',
-    requireInteraction:true,silent:!state.profile.sound,vibrate:state.profile.sound?[300,120,300,120,300]:undefined})).catch(()=>{});
+    requireInteraction:true,renotify:true,silent:!state.profile.sound,vibrate:state.profile.sound?BUZZ:undefined})).catch(()=>{});
 }
 function clearAlarmNote(){if(alertsOn()) navigator.serviceWorker.ready.then(r=>r.getNotifications({tag:ALARM_TAG})).then(ns=>ns.forEach(n=>n.close())).catch(()=>{})}
 function askAlerts(){if(!canNotify()) return; Promise.resolve(Notification.requestPermission()).then(()=>{armedKey='';syncAlarm();render()}).catch(()=>{})}
 const FOCUS_LINES=['Phone down. Slow breath in through the nose.','Picture the next set: tight, clean, controlled.','Shake out, sip water, stay at your station.','Drop your shoulders and exhale slowly.','The next set starts when the timer says so.','Think about one cue for the next set.'];
 function tick(){
-  syncAlarm(); if(!active) return;
+  syncAlarm(); syncLoud(); if(!active) return;
   const $=id=>document.getElementById(id), now=Date.now();
   if($('elapsed')) $('elapsed').textContent=mmss((now-active.started)/1000);
   if(active.phase==='rest'&&active.rest){
     const r=active.rest, left=r.plan-(now-r.start)/1000;
     if(left<=10&&left>0&&!r.warned&&r.plan>20){r.warned=true;beep(660,120)}
-    if(left<=0&&!r.beeped){r.beeped=true;beep(988,220,3);alarmNote(r.move?'Move to the next exercise':'Rest is over','Time for your next set');saveActive()}
+    if(left<=0&&!r.beeped){r.beeped=true;if(!loudEl)beep(988,220,3);alarmNote(r.move?'Move to the next exercise':'Rest is over','Time for your next set');saveActive()}
     if($('restClock')){$('restClock').textContent=left>=0?mmss(left):'+'+mmss(-left);
       $('restBar').style.width=Math.max(0,Math.min(100,(1-left/r.plan)*100))+'%';
       const card=$('restCard'); if(card) card.classList.toggle('over',left<0);
@@ -1121,7 +1143,7 @@ function tick(){
     if(c&&c.x.side&&el>=one&&el<tgt&&!active.sideBeeped){active.sideBeeped=true;beep(660,150,1)}
     if($('workSide')) $('workSide').textContent=c&&c.x.side&&el<tgt?(el<one?'First side':'Switch sides'):'';
     $('workClock').textContent=el<tgt?mmss(tgt-el):'+'+mmss(el-tgt);
-    if(el>=tgt&&!active.workBeeped){active.workBeeped=true;beep(988,220,2);alarmNote('Time’s up',`${c?c.x.n+': ':''}hold done`)}}
+    if(el>=tgt&&!active.workBeeped){active.workBeeped=true;if(!loudEl)beep(988,220,2);alarmNote('Time’s up',`${c?c.x.n+': ':''}hold done`)}}
 }
 setInterval(tick,250);
 
@@ -1399,7 +1421,9 @@ function viewSettings(){
       <div class="row"><button class="chip" data-act="sound" aria-pressed="${state.profile.sound}">Sound &amp; vibration ${state.profile.sound?'on':'off'}</button></div>
       <p class="small muted">The timer beeps 10 seconds before the end and again at zero, then counts how far over you go.</p>
       ${canNotify()?`<div class="row"><button class="chip" data-act="alertOn" aria-pressed="${alertsOn()}"${Notification.permission==='default'?'':' disabled'}>${Notification.permission==='granted'?'Lock-screen alerts on':Notification.permission==='denied'?'Alerts blocked in browser settings':'Turn on lock-screen alerts'}</button></div>`:''}
-      <p class="small muted">While a workout runs, the app keeps your screen on, so the beep is most reliable with the app open. If you lock the phone or switch apps, it sends a notification when rest or a hold is over instead. That works best on Android with the app installed to your home screen. On iPhone, alerts only work for the installed app and can come late. If your phone stops the app to save battery, no alert comes, so don't leave it for long.</p>
+      ${state.profile.sound?`<div class="row"><button class="chip" data-act="loud" aria-pressed="${!!state.profile.loud}">Loud alarm when locked ${state.profile.loud?'on':'off'}</button></div>
+      <p class="small muted">Plays the alarm through your phone's media volume even with the screen locked. It pauses your music while a timer runs.</p>`:''}
+      <p class="small muted">While a workout runs, the app keeps your screen on, so the beep is most reliable with the app open. If you lock the phone or switch apps, it sends a notification when rest or a hold is over instead, and repeats it every 20 seconds for a minute until you come back. Android sets how a notification buzzes and sounds, under Settings › Apps › Chrome › Notifications. That works best on Android with the app installed to your home screen. On iPhone, alerts only work for the installed app and can come late. If your phone stops the app to save battery, no alert comes, so don't leave it for long.</p>
     </section>
     <section class="panel stack"><h3>Google Drive</h3>${drivePanel()}</section>
     <section class="panel stack"><h3>Import from Fitbod</h3>
@@ -1761,6 +1785,7 @@ document.addEventListener('click',async e=>{
       p.customEx=p.customEx||[]; p.customEx.push(c); p.favorites.push(c.id); touchProfile(); rebuildLibrary(); selected=c.id; toast('Added to your exercises and favorites'); render(); return}
     case 'cali': p.cali=!p.cali; if(!p.cali&&p.ctx.focus==='cali') p.ctx.focus='auto'; else if(p.cali&&p.ctx.focus==='auto') p.ctx.focus='cali'; touchProfile(); render(); return;
     case 'alertOn': askAlerts(); return;
+    case 'loud': p.loud=!p.loud; saveProfile(); render(); return;
     case 'alertNo': p.alertAsk=false; saveProfile(); render(); return;
     case 'sound': p.sound=!p.sound; saveProfile(); render(); if(p.sound) beep(); return;
     case 'resetAsk': pendingDelete='ALL'; render(); return;
