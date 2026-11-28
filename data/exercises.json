@@ -46,6 +46,23 @@
     ]
   },
   {
+    "id": "dbfsquat",
+    "name": "Dumbbell front squat",
+    "pattern": "squat",
+    "muscles": ["quads", "glutes", "abs"],
+    "equipment": [["dumbbell"]],
+    "tracking": "weight-reps",
+    "figure": "frontsquat",
+    "qualities": ["core"],
+    "strongRatio": 0.4,
+    "perHand": true,
+    "cues": [
+      "Dumbbells on your shoulders, elbows high",
+      "Sit straight down between your heels",
+      "Stay tall and drive up"
+    ]
+  },
+  {
     "id": "legpress",
     "name": "Leg press",
     "pattern": "squat",
@@ -127,6 +144,23 @@
     ]
   },
   {
+    "id": "dbrdl",
+    "name": "Dumbbell Romanian deadlift",
+    "pattern": "hinge",
+    "muscles": ["hams", "glutes", "back"],
+    "equipment": [["dumbbell"]],
+    "tracking": "weight-reps",
+    "figure": "hinge",
+    "qualities": ["post", "grip"],
+    "strongRatio": 0.45,
+    "perHand": true,
+    "cues": [
+      "Dumbbells slide down the front of your thighs",
+      "Push your hips back, soft knees",
+      "Stand up by squeezing your glutes"
+    ]
+  },
+  {
     "id": "hipthrust",
     "name": "Hip thrust",
     "pattern": "hinge",
@@ -137,6 +171,22 @@
     "qualities": ["post"],
     "strongRatio": 1.8,
     "cues": ["Upper back on the bench edge", "Chin tucked, ribs down", "Squeeze and hold at the top"]
+  },
+  {
+    "id": "dbhipthrust",
+    "name": "Dumbbell hip thrust",
+    "pattern": "hinge",
+    "muscles": ["glutes", "hams"],
+    "equipment": [["dumbbell", "bench"]],
+    "tracking": "weight-reps",
+    "figure": "hipthrust",
+    "qualities": ["post"],
+    "strongRatio": 0.8,
+    "cues": [
+      "One dumbbell across your hips, held with both hands",
+      "Shoulders on the bench, chin tucked",
+      "Lock out with your glutes, not your lower back"
+    ]
   },
   {
     "id": "backext",
@@ -235,6 +285,23 @@
       "Long step, back knee kisses the floor",
       "Torso tall",
       "Push through the front heel"
+    ]
+  },
+  {
+    "id": "dbrevlunge",
+    "name": "Dumbbell reverse lunge",
+    "pattern": "single",
+    "muscles": ["quads", "glutes"],
+    "equipment": [["dumbbell"]],
+    "tracking": "weight-reps",
+    "figure": "lunge",
+    "qualities": ["single"],
+    "strongRatio": 0.45,
+    "perHand": true,
+    "cues": [
+      "A dumbbell in each hand, arms long",
+      "Step back, back knee to the floor",
+      "Drive up through the front heel"
     ]
   },
   {
@@ -522,6 +589,22 @@
     ]
   },
   {
+    "id": "dbbentrow",
+    "name": "Dumbbell bent-over row",
+    "pattern": "hpull",
+    "muscles": ["back", "arms"],
+    "equipment": [["dumbbell"]],
+    "tracking": "weight-reps",
+    "figure": "row",
+    "strongRatio": 0.4,
+    "perHand": true,
+    "cues": [
+      "Hinge until your torso is near parallel",
+      "Pull both dumbbells to your hips",
+      "Pause, then lower under control"
+    ]
+  },
+  {
     "id": "dbrow",
     "name": "One-arm dumbbell row",
     "pattern": "hpull",
@@ -762,6 +845,7 @@
     "figure": "sideplank",
     "qualities": ["core", "lat"],
     "strongSeconds": 75,
+    "eachSide": true,
     "cues": ["Elbow under shoulder", "Hips high, body in a line", "Keep breathing"]
   },
   {
@@ -774,6 +858,7 @@
     "figure": "copen",
     "qualities": ["lat", "core"],
     "strongSeconds": 45,
+    "eachSide": true,
     "cues": [
       "Top leg on the bench at the inside of the knee or foot",
       "Lift the hips into line",
