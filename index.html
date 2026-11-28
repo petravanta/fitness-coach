@@ -233,6 +233,28 @@ body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 .setlog{display:flex;flex-wrap:wrap;gap:6px}
 .setlog span{font-family:var(--f-mono);font-size:13px;background:var(--sunk);border-radius:6px;padding:2px 8px}
 .upnext{font-size:13px;color:var(--muted)}
+/* timers that keep running while paging, how a set felt, plates, swipe */
+.timerstrip{display:flex;align-items:center;gap:10px;width:100%;border:1px solid var(--accent);background:var(--accent-soft);color:var(--ink);border-radius:12px;padding:10px 14px;text-align:left;min-height:48px}
+.timerstrip b{font-size:20px;font-weight:500}
+.timerstrip .go{margin-left:auto;font-weight:600;color:var(--accent);white-space:nowrap}
+.timerstrip #miniLbl{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.feel{display:flex;flex-direction:column;gap:6px;align-items:center;width:100%}
+.lastline{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;color:var(--muted)}
+.lastline b{color:var(--ink)}
+.plates{font-family:var(--f-mono);font-size:13px;background:var(--sunk);border-radius:8px;padding:6px 10px;align-self:flex-start}
+.stepper.timer.sw #workClock,.stepper.timer.sw #workSide{color:var(--lv-learn)}
+@media (prefers-reduced-motion:no-preference){.slide-next{animation:slnext .2s ease-out}.slide-prev{animation:slprev .2s ease-out}
+  @keyframes slnext{from{transform:translateX(40px);opacity:.3}}@keyframes slprev{from{transform:translateX(-40px);opacity:.3}}}
+[data-swipe]{touch-action:pan-y}
+.trows{display:flex;flex-direction:column}
+.trow{display:grid;grid-template-columns:minmax(0,1fr) 80px auto;gap:12px;align-items:center;background:none;border:0;border-bottom:1px solid var(--line);padding:10px 2px;text-align:left;min-height:48px}
+.trow:last-child{border-bottom:0}
+.trow .nm{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trow:hover{background:var(--sunk)}
+.spark{width:80px;height:24px;overflow:visible}
+.spark polyline{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.spark circle{fill:var(--accent)}
+@media (max-width:420px){.trow{grid-template-columns:minmax(0,1fr) 64px}.trow .pill{grid-column:1/-1;justify-self:start;margin-top:-4px}.spark{width:64px}}
 /* progress */
 .bars{display:flex;flex-direction:column;gap:10px}
 .barrow{display:grid;grid-template-columns:150px minmax(0,1fr) 190px;gap:12px;align-items:center;font-size:14px}
@@ -404,9 +426,12 @@ function defaultProfile(){return{
   equipment:['barbell','rack','bench','dumbbell','kettlebell','cable','pullup','dip','band','box','medball','abwheel','rower','bike'],
   customEq:[], favorites:['bsquat','pullup','bss','farmer'], sports:['skate'], muscles:['shoulders','back','glutes'], balance:55,
   customEx:[], rest:{main:150,acc:75,ss:60,power:90,core:45}, sound:true,
-  ctx:{minutes:60,focus:'auto',sport:'all'}, examples:true
+  ctx:{minutes:60,focus:'auto',sport:'all'}, examples:true, switchGap:5,
+  // Barbell plate guidance: bar weight and the plates the gym has, per unit
+  plates:{kg:{bar:20,list:[25,20,15,10,5,2.5,1.25]},lb:{bar:45,list:[45,35,25,10,5,2.5]}}
 };}
-function fixProfile(p){const d=defaultProfile();return Object.assign(d,p,{rest:Object.assign(d.rest,p.rest||{}),ctx:Object.assign(d.ctx,p.ctx||{})})}
+function fixProfile(p){const d=defaultProfile(), pl=p.plates||{};
+  return Object.assign(d,p,{rest:Object.assign(d.rest,p.rest||{}),ctx:Object.assign(d.ctx,p.ctx||{}),plates:{kg:Object.assign(d.plates.kg,pl.kg||{}),lb:Object.assign(d.plates.lb,pl.lb||{})}})}
 let state={profile:defaultProfile(),sessions:[],deleted:[]}, active=null, planCache=null;
 // mode: 'loading' | 'signin' | 'ready' (saving to Drive) | 'demo' (nothing saved) | 'error'
 let mode='loading';
@@ -770,10 +795,52 @@ function exHistory(id){
   return state.sessions.filter(s=>s.entries.some(e=>e.ex===id)).map(s=>{
     const e=s.entries.find(e=>e.ex===id); let best=null,bm=-1;
     e.sets.forEach(st=>{const m=metric(x,st).v; if(m>bm){bm=m;best=st}});
-    return {ts:s.ts,sets:e.sets,best,v:bm};
+    return {ts:s.ts,sets:e.sets,best,v:bm,dl:!!e.dl,feel:entryFeel(e.sets)};
   }).sort((a,b)=>a.ts<b.ts?-1:1);
 }
 function lastEntry(id){const h=exHistory(id);return h.length?h[h.length-1]:null}
+// How hard a set felt, logged during the rest after it (reps left in the tank)
+const FEEL={1:'Easy',2:'Good',3:'Hard',4:'All-out'}, FEEL_HINT={1:'3+ reps left',2:'about 2 left',3:'1 left',4:'nothing left'}, FEEL_PILL={1:'l4',2:'l3',3:'l1',4:'l1'};
+function entryFeel(sets){const f=(sets||[]).map(s=>s.f).filter(Boolean); return f.length?Math.max(...f):null}
+// Several sessions, not just the last: climbing, holding, stalled (no new best for 3+ sessions) or dipping.
+// A planned lighter week (dl) restarts the count, so the dip it causes isn't read as a decline.
+function trendOf(x,h=exHistory(x.id)){
+  let H=h.filter(o=>o.v>0&&Date.now()-new Date(o.ts).getTime()<84*DAY);
+  const di=H.map(o=>o.dl).lastIndexOf(true); if(di>=0) H=H.slice(di+1);
+  H=H.slice(-8); const n=H.length; if(n<2) return n?{kind:'new',n,pts:H.map(o=>o.v)}:null;
+  let best=H[0].v, bi=0; H.forEach((o,i)=>{if(o.v>best*1.01){best=o.v;bi=i}});
+  const last=H[n-1].v, stuck=n-1-bi, pct=(last-H[0].v)/H[0].v;
+  const kind=n>=3&&bi<n-2&&last<best*.95&&H[n-2].v<best*.97?'down':n>=4&&stuck>=3?'stall':pct>.02?'up':'flat';
+  return {kind,n,stuck,pct,pts:H.map(o=>o.v),feels:H.map(o=>o.feel)};
+}
+function trendTxt(T){
+  if(!T) return '';
+  const p=Math.round(Math.abs(T.pct)*100);
+  return T.kind==='up'?`Climbing · up ${p}% over ${T.n} sessions`:T.kind==='stall'?`Flat for ${T.stuck} sessions`:T.kind==='down'?`Dipping · down ${p}% from your best`:T.kind==='new'?'Just started':'Holding steady';
+}
+const TREND_PILL={up:'l3',stall:'l1',down:'l1',flat:'',new:''};
+// Sets in a short line: "60 × 8, 8, 7" when the weight stayed the same
+function setsSummary(x,sets){
+  if(x.t==='wr'&&sets.length>1&&sets.every(s=>s.w===sets[0].w)) return `${toDisp(sets[0].w||0)} ${U()} × ${sets.map(s=>s.r||0).join(', ')}`;
+  return sets.map(s=>setTxt(x,s)).join(', ');
+}
+/* ----- Plates: what to load on each side of the bar ----- */
+// The option the person would use is the first one they have the equipment for
+const usesBar=x=>{if(x.t!=='wr') return false; const h=has(), o=x.eq.find(o=>o.every(e=>h.has(e)))||x.eq[0]; return o.includes('barbell')};
+function platesFor(total){
+  const P=state.profile.plates[U()], bar=+P.bar||0, list=[...P.list].map(Number).filter(v=>v>0).sort((a,b)=>b-a);
+  if(total==null||isNaN(total)) return '';
+  if(total<bar-.01) return `Less than the empty bar (${bar} ${U()})`;
+  const q=.05, T=Math.round((total-bar)/2/q); if(T<=0) return `Empty bar (${bar} ${U()})`;
+  if(!list.length) return '';
+  // Fewest plates that make the weight exactly; if none do, the closest lighter load
+  const coins=list.map(v=>Math.round(v/q)), dp=new Array(T+1).fill(Infinity), from=new Array(T+1).fill(-1); dp[0]=0;
+  for(let t=1;t<=T;t++) coins.forEach((c,i)=>{if(c<=t&&dp[t-c]+1<dp[t]){dp[t]=dp[t-c]+1;from[t]=i}});
+  let t=T; while(t>0&&dp[t]===Infinity) t--;
+  const out=[]; for(let k=t;k>0;k-=coins[from[k]]) out.push(list[from[k]]);
+  const made=Math.round((bar+2*t*q)*100)/100;
+  return (out.length?`Each side: ${out.join(' + ')}`:`Empty bar`)+(t<T?` · makes ${made} ${U()}, the closest you can load`:'');
+}
 function setTxt(x,s){
   if(x.t==='time') return `${s.t||0}s${s.w?' · '+wtxt(s.w):''}`;
   if(x.t==='bw') return `${s.r||0} reps${s.w?' +'+wtxt(s.w):''}`;
@@ -1028,15 +1095,42 @@ function suggest(x,d){
     const b=baseStart(x,d); if(b) return b;
     return {w:null,r:d.reps?d.reps[0]:null,t:d.secs||null,note:x.t==='wr'?`First time: pick a weight you could do about ${(d.reps?d.reps[1]:10)+2} times`:''};
   }
-  if(x.t==='time'){const best=Math.max(...L.sets.map(s=>s.t||0)),w=Math.max(...L.sets.map(s=>s.w||0))||null;return {w,t:best+5,note:`Last time ${best}s${w?' with '+wtxt(w):''}. Go 5s longer.`}}
+  // Beyond last time: the trend over recent sessions, how hard last time felt, and time away
+  const T=trendOf(x), feel=L.feel, away=(Date.now()-new Date(L.ts).getTime())/DAY, wks=Math.round(away/7);
+  if(x.t==='time'){const best=Math.max(...L.sets.map(s=>s.t||0)),w=Math.max(...L.sets.map(s=>s.w||0))||null;
+    if(away>21) return {w,t:best,note:`${wks} weeks since last time. Match your ${best}s before going longer.`};
+    if(T&&T.kind==='stall') return {w,t:best,note:`Holding ${best}s for ${T.stuck} sessions. Keep the time and make it harder: slower breathing, or a tougher version.`};
+    if(feel===4) return {w,t:best,note:`${best}s was all-out last time. Match it today.`};
+    return {w,t:best+5,note:`Last time ${best}s${w?' with '+wtxt(w):''}. Go 5s longer.`}}
   const top=Math.max(...L.sets.map(s=>s.w||0)), atTop=L.sets.filter(s=>(s.w||0)===top), minR=Math.min(...atTop.map(s=>s.r||0)), maxR=Math.max(...L.sets.map(s=>s.r||0));
   if(x.t==='bw'){
+    if(T&&T.kind==='stall') return {w:top||null,r:maxR,note:`Stuck at about ${maxR} reps for ${T.stuck} sessions. Keep the reps and lower slowly (3 seconds down) to break through.`};
     if(d.reps&&minR>=d.reps[1]) return {w:top||null,r:d.reps[1],note:`You hit ${minR}+ every set last time. Slow the lowering or add a little weight.`};
     return {w:top||null,r:d.reps?Math.min(maxR+1,d.reps[1]):maxR+1,note:`Last time best ${maxR} reps. Aim for one more.`};
   }
-  if(d.reps&&minR>=d.reps[1]) return {w:top+inc(x),r:d.reps[0],note:`You got ${minR}+ on every set at ${wtxt(top)}, so go up.`};
+  if(top&&d.reps){
+    // Back after a break: ease in
+    if(away>21){const w=roundW(x,top*.9); return {w,r:d.reps[0],kind:'return',note:`${wks} weeks since you last did this. Ease back in at ${wtxt(w)} and build up over the next sessions.`}}
+    // After a lighter week, head back toward the weight before it
+    const H=exHistory(x.id), prev=H.length>1?H[H.length-2]:null, preTop=prev?Math.max(...prev.sets.map(s=>s.w||0)):0;
+    if(L.dl&&preTop>top){const w=roundW(x,Math.max(top+inc(x),preTop-inc(x))); return {w,r:d.reps[0],note:`Lighter week done. Back up to ${wtxt(w)}, just under where you were.`}}
+    // Several sessions without a new best, or a real dip: a planned lighter week clears fatigue
+    const twoHard=T&&T.feels&&T.feels.slice(-2).every(f=>f===4);
+    if(T&&(T.kind==='down'||(T.kind==='stall'&&T.stuck>=4)||(twoHard&&T.kind!=='up'))){const w=roundW(x,top*.9);
+      return {w,r:d.reps[1],kind:'deload',note:`${T.kind==='down'?'Your last sessions dipped':twoHard?'The last two sessions were all-out':`No new best in ${T.stuck} sessions`}. Take a lighter session at ${wtxt(w)} for ${d.reps[1]} easy reps, then build back. That's how you get unstuck.`}}
+    if(minR>=d.reps[1]){const jump=feel===1?2:1, w=top+inc(x)*jump;
+      return {w,r:d.reps[0],note:feel===1?`${minR}+ on every set at ${wtxt(top)} and it felt easy, so a bigger step up.`:feel===4?`You got ${minR}+ at ${wtxt(top)}, but it was all-out. Go up a little and expect the low end of the range.`:`You got ${minR}+ on every set at ${wtxt(top)}, so go up.`}}
+    if(feel===4) return {w:top,r:minR,note:`Last time was all-out at ${wtxt(top)}. Repeat ${minR} reps and make them look easier.`};
+    if(T&&T.kind==='stall') return {w:top,r:Math.min(minR+1,d.reps[1]),note:`Flat for ${T.stuck} sessions. Stay at ${wtxt(top)}, aim for one more rep, and lower slowly. If it stays flat, a lighter session comes next.`};
+  }
   if(d.reps&&minR<d.reps[0]) return {w:top,r:d.reps[0],note:`Stay at ${wtxt(top)} until every set reaches ${d.reps[0]}.`};
   return {w:top,r:Math.min(minR+1,d.reps?d.reps[1]:minR+1),note:`Last time ${atTop.length}×${minR} at ${wtxt(top)}. One more rep.`};
+}
+// Last time, and how it felt, so today's target feels within reach
+function lastTime(x){
+  const L=lastEntry(x.id); if(!L) return '';
+  const say={1:'It felt easy last time, so today’s step is well within reach.',2:'It felt good last time. You have room for this.',3:'It felt hard last time. Matching that effort today is a win.',4:'It was all-out last time. Matching it is progress.'};
+  return `<div class="lastline small">${L.feel?`<span class="pill ${FEEL_PILL[L.feel]}">Felt ${esc(FEEL[L.feel].toLowerCase())}</span>`:''}<span><b>Last time</b> · ${fmtDate(L.ts)}: <span class="mono">${esc(setsSummary(x,L.sets))}</span>${L.feel?`. ${esc(say[L.feel])}`:''}</span></div>`;
 }
 function doseTxt(x,d,rest){
   const r=rest?` · rest ${mmss(rest)}`:'';
@@ -1076,25 +1170,31 @@ function exTag(b,i){const bl=active.plan.blocks[b], warm=active.plan.blocks[0].r
 function goExercise(b,i){
   const js=exList().find(e=>e.b===b&&e.i===i).steps; js.forEach(j=>delete active.steps[j].skip);
   let k=js.find(j=>!active.log[j]); if(k==null) k=js[js.length-1];
-  active.k=k; active.phase='set'; active.rest=null; initDraft();
-  const l=active.log[k]; if(l) active.draft={w:l.w,r:l.r,t:l.t};
-  selected=null; saveActive(); render(); window.scrollTo(0,0);
+  landOn(k); selected=null; saveActive(); render(); window.scrollTo(0,0);
 }
+// Paging between exercises never stops a timer: a rest or hold keeps running, and coming back to it shows it again
+function landOn(k){
+  const A=active; A.k=k; A.phase=A.rest&&A.rest.k===k&&isOpen(k)?'rest':'set'; initDraft();
+  const l=A.log[k]; if(l) A.draft={w:l.w,r:l.r,t:l.t};
+  if(A.work&&A.workK===k&&A.workDraft) A.draft=A.workDraft;
+}
+function backToTimer(){const A=active; if(A.work&&A.workK!==A.k&&A.steps[A.workK]) landOn(A.workK); else if(A.rest&&A.steps[A.rest.k]) landOn(A.rest.k); saveActive(); render(); window.scrollTo(0,0)}
 // Change the running workout's plan; logged and skipped sets stay with the same exercise and set number
 function editActive(fn){
   const A=active, ref=A.steps.map((s,j)=>({it:A.plan.blocks[s.b].items[s.i],s:s.s,skip:s.skip,log:A.log[j]})), cur=A.phase!=='done'?ref[A.k]:null;
+  const rRef=A.rest?ref[A.rest.k]:null, wRef=A.work?ref[A.workK]:null;
   if(!fn(A.plan)) return;
   const steps=buildSteps(A.plan), log={}; let k=-1;
-  steps.forEach((st,j)=>{const o=ref.find(r=>r.it===A.plan.blocks[st.b].items[st.i]&&r.s===st.s); if(!o) return; if(o.skip) st.skip=true; if(o.log) log[j]=o.log; if(o===cur) k=j});
+  let rk=-1, wk=-1;
+  steps.forEach((st,j)=>{const o=ref.find(r=>r.it===A.plan.blocks[st.b].items[st.i]&&r.s===st.s); if(!o) return; if(o.skip) st.skip=true; if(o.log) log[j]=o.log; if(o===cur) k=j; if(o===rRef) rk=j; if(o===wRef) wk=j});
+  if(A.rest){if(rk<0) A.rest=null; else A.rest.k=rk} if(A.work){if(wk<0) A.work=null; else A.workK=wk}
   A.steps=steps; A.log=log; A.est=A.plan.blocks.reduce((t,b)=>t+blockSecs(b),0);
-  if(k<0){k=nextOpen(0); if(k<0) A.phase='done'; else {A.k=k; if(A.phase==='done') A.phase='set'; initDraft()}}
+  if(k<0){k=nextOpen(0); if(k<0) A.phase='done'; else {A.k=k; A.phase=A.rest&&A.rest.k===k?'rest':'set'; initDraft()}}
   else A.k=k;
   saveActive(); render();
 }
 function goSet(j){
-  const A=active; delete A.steps[j].skip; A.k=j; A.phase='set'; A.rest=null; initDraft();
-  const l=A.log[j]; if(l) A.draft={w:l.w,r:l.r,t:l.t};
-  saveActive(); render();
+  delete active.steps[j].skip; landOn(j); saveActive(); render();
 }
 function stepExercise(dir){const L=exList(), st=active.steps[active.k]; if(!st) return; const t=L[L.findIndex(e=>e.b===st.b&&e.i===st.i)+dir]; if(t) goExercise(t.b,t.i)}
 function curItem(k=active.k){const st=active.steps[k]; if(!st) return null; const b=active.plan.blocks[st.b]; return {st,b,it:b.items[st.i],x:BYID[b.items[st.i].ex]}}
@@ -1103,47 +1203,76 @@ function initDraft(){
   const c=curItem(); if(!c){active.draft=null;return}
   const prev=loggedFor(c.it.ex).slice(-1)[0], sg=suggest(c.x,c.it.d);
   active.draft=prev?{w:prev.w,r:prev.r,t:prev.t}:{w:sg.w,r:sg.r,t:sg.t||c.it.d.secs};
-  active.work=null;
+  // timed sets aim for the time you set the timer to last, not what it measured
+  const tg=active.tgt&&active.tgt[c.it.ex]; if(prev&&c.x.t==='time'&&tg) active.draft.t=tg;
+  active.timed=null; // set when a hold timer measured this set's time
+  // remember a planned lighter session, so the trend doesn't read it as a decline
+  if(sg.kind==='deload'){active.dl=active.dl||{}; active.dl[c.it.ex]=sg.w}
+}
+/* Hold timer for timed exercises. It runs the time you asked for (the Seconds box), and for each-side moves runs the first side,
+   a short switch-over gap, then the second side. Stopping it puts the measured time in the Seconds box, where you can still change it. */
+function workPlan(){const c=curItem(), one=Math.max(1,+(active.draft&&active.draft.t)||c.it.d.secs||30), side=!!c.x.side, gap=side?(+state.profile.switchGap||0):0;
+  return {one,side,gap,total:side?one*2+gap:one}}
+function workPhase(P,el){
+  if(!P.side) return {lbl:'',left:P.one-el,over:el>=P.one};
+  if(el<P.one) return {lbl:'First side',left:P.one-el};
+  if(el<P.one+P.gap) return {lbl:'Switch sides',left:P.one+P.gap-el,sw:true};
+  return {lbl:el<P.total?'Second side':'',left:P.total-el,over:el>=P.total};
+}
+// Seconds held: for each-side moves, what both sides held (the first side stops at the target, so the shorter of the two)
+function workMeasured(){const P=active.workPlan, el=(Date.now()-active.work)/1000;
+  if(!P.side) return Math.round(el);
+  if(el<P.one) return Math.round(el);
+  return Math.round(Math.min(P.one,Math.max(0,el-P.one-P.gap)));
+}
+function stopWork(){
+  const A=active; if(!A.work) return; const t=workMeasured(), k=A.workK; A.work=null; A.workDraft=null;
+  if(k===A.k&&A.draft){A.draft.t=t; A.timed=t}
 }
 function doneSet(){
-  const c=curItem(); if(!c) return; const d=active.draft||{};
-  let t=d.t; if(active.work){t=Math.round((Date.now()-active.work)/1000)}
-  active.log[active.k]={ex:c.it.ex,w:d.w==null?null:+d.w,r:d.r==null?null:+d.r,t:t==null?null:+t,ts:Date.now()};
+  const c=curItem(); if(!c) return;
+  if(active.work&&active.workK===active.k) stopWork();
+  const d=active.draft||{}, t=d.t, from=active.k;
+  active.log[from]={ex:c.it.ex,w:d.w==null?null:+d.w,r:d.r==null?null:+d.r,t:t==null?null:+t,ts:Date.now()};
   const rest=c.st.rest, nk=nextOpen(active.k+1);
-  if(nk<0){active.phase='done'}
-  else{active.k=nk; if(rest>0){active.phase='rest';active.rest={start:Date.now(),plan:rest,move:!!c.st.move,beeped:false,warned:false}} else active.phase='set'}
+  if(nk<0){active.phase='done'; active.rest=null; active.lastK=from}
+  else{active.k=nk; if(rest>0){active.phase='rest';active.rest={start:Date.now(),plan:rest,move:!!c.st.move,beeped:false,warned:false,k:nk,from:c.b.role==='warm'?null:from}} else {active.phase='set'; active.rest=null}}
   initDraft(); saveActive(); render(); window.scrollTo(0,0);
 }
 function startSet(){
   const r=active.rest; if(r&&!r.move) active.rests.push({p:r.plan,a:Math.round((Date.now()-r.start)/1000),ts:Date.now()});
-  active.phase='set'; active.rest=null; saveActive(); render();
+  active.phase='set'; active.rest=null; saveActive(); render(); window.scrollTo(0,0);
 }
 // Undo the most recently logged set, wherever it was
 function undoSet(){
   const ks=Object.keys(active.log).map(Number); if(!ks.length) return;
   const k=ks.reduce((a,b)=>active.log[a].ts>active.log[b].ts?a:b), l=active.log[k]; delete active.log[k];
   active.rests=active.rests.filter(r=>!r.ts||r.ts<l.ts);
-  active.k=k; active.phase='set'; active.rest=null; active.draft={w:l.w,r:l.r,t:l.t}; active.work=null; saveActive(); render();
+  active.k=k; active.phase='set'; active.rest=null; active.draft={w:l.w,r:l.r,t:l.t}; active.work=null; active.timed=null; saveActive(); render();
 }
 function skipExercise(){
   const c=curItem(); if(!c) return;
   active.steps.forEach((s,j)=>{if(s.b===c.st.b&&s.i===c.st.i&&!active.log[j]) s.skip=true});
-  const nk=nextOpen(active.k); if(nk<0) active.phase='done'; else {active.k=nk; active.phase='set'; active.rest=null; initDraft()}
+  if(active.rest&&!isOpen(active.rest.k)) active.rest=null;
+  if(active.work&&!isOpen(active.workK)) active.work=null;
+  const nk=nextOpen(active.k); if(nk<0) active.phase='done'; else {active.k=nk; active.phase=active.rest&&active.rest.k===nk?'rest':'set'; initDraft()}
   saveActive(); render();
 }
 function finishWorkout(save){
   if(save){
     const by=new Map();
-    Object.keys(active.log).map(Number).sort((a,b)=>a-b).forEach(k=>{const l=active.log[k]; if(!by.has(l.ex)) by.set(l.ex,[]); by.get(l.ex).push({w:l.w,r:l.r,t:l.t})});
-    const entries=[...by.entries()].map(([ex,sets])=>({ex,sets}));
+    Object.keys(active.log).map(Number).sort((a,b)=>a-b).forEach(k=>{const l=active.log[k]; if(!by.has(l.ex)) by.set(l.ex,[]); const st={w:l.w,r:l.r,t:l.t}; if(l.f) st.f=l.f; by.get(l.ex).push(st)});
+    const dl=active.dl||{}, entries=[...by.entries()].map(([ex,sets])=>{const e={ex,sets}; if(dl[ex]!=null&&Math.max(...sets.map(s=>s.w||0))<=dl[ex]+.01) e.dl=true; return e});
     if(entries.length){
       const before={}; entries.forEach(e=>{const h=exHistory(e.ex); before[e.ex]=h.length?Math.max(...h.map(x=>x.v)):null});
       const ses={id:active.id,ts:new Date(active.started).toISOString(),end:new Date().toISOString(),focus:active.focus,tpl:active.tpl||undefined,routine:active.routine||undefined,entries,
         rest:{n:active.rests.length,ok:active.rests.filter(r=>r.a-r.p<=15).length,over:active.rests.reduce((t,r)=>t+Math.max(0,r.a-r.p),0)}};
+      const prevR=state.sessions.filter(s=>!s.routine&&s.rest&&s.rest.n).slice(-6), usual=prevR.length?prevR.reduce((t,s)=>t+s.rest.ok/s.rest.n,0)/prevR.length:null, mine=ses.rest.n?ses.rest.ok/ses.rest.n:null;
+      const focus=mine==null?null:usual==null?Math.round(mine*100)+'% on time':mine-usual>.08?'Tighter':usual-mine>.08?'Looser':'Steady';
       state.sessions.push(ses);
       const prs=entries.filter(e=>{const x=BYID[e.ex]; if(!x||before[e.ex]==null) return false; return Math.max(...e.sets.map(s=>metric(x,s).v))>before[e.ex]+.01}).map(e=>BYID[e.ex].n);
       const vol=entries.reduce((t,e)=>t+e.sets.reduce((u,s)=>u+(s.w||0)*(s.r||0),0),0);
-      lastSummary={mins:Math.round((Date.now()-active.started)/60000),sets:entries.reduce((t,e)=>t+e.sets.length,0),vol,rest:ses.rest,prs,routine:active.tpl&&active.routine?active.tpl:null,moves:entries.length};
+      lastSummary={mins:Math.round((Date.now()-active.started)/60000),sets:entries.reduce((t,e)=>t+e.sets.length,0),vol,rest:ses.rest,focus,prs,routine:active.tpl&&active.routine?active.tpl:null,moves:entries.length};
     }
   }
   if(!active.routine) planCache=null;
@@ -1168,10 +1297,11 @@ const alertsOn=()=>canNotify()&&Notification.permission==='granted';
 const ALARM_TAG='fc-timer';
 let armedKey='';
 function pendingAlarm(){
-  if(!active) return null; const c=curItem();
-  if(active.phase==='rest'&&active.rest){const r=active.rest;
+  if(!active) return null;
+  if(active.rest){const r=active.rest, c=curItem(r.k);
     return {at:r.start+r.plan*1000,title:r.move?'Move to the next exercise':'Rest is over',body:c?`Next: ${c.x.n}`:'Time for your next set'}}
-  if(active.work&&c){const tgt=(c.it.d.secs||0)*(c.x.side?2:1); if(tgt) return {at:active.work+tgt*1000,title:'Time’s up',body:`${c.x.n}: hold done`}}
+  const c=active.work&&curItem(active.workK);
+  if(c&&active.workPlan) return {at:active.work+active.workPlan.total*1000,title:'Time’s up',body:`${c.x.n}: hold done`};
   return null;
 }
 function toSW(msg){navigator.serviceWorker.ready.then(r=>r.active&&r.active.postMessage(msg)).catch(()=>{})}
@@ -1215,8 +1345,9 @@ function tick(){
   syncAlarm(); syncLoud(); if(!active) return;
   const $=id=>document.getElementById(id), now=Date.now();
   if($('elapsed')) $('elapsed').textContent=mmss((now-active.started)/1000);
-  if(active.phase==='rest'&&active.rest){
+  if(active.rest){
     const r=active.rest, left=r.plan-(now-r.start)/1000;
+    if($('miniClock')&&!active.work){$('miniClock').textContent=left>=0?mmss(left):'+'+mmss(-left); $('miniLbl').textContent=left>=0?'Rest':'Rest is over'}
     if(left<=10&&left>0&&!r.warned&&r.plan>20){r.warned=true;beep(660,120)}
     if(left<=0&&!r.beeped){r.beeped=true;if(!loudEl)beep(988,220,3);alarmNote(r.move?'Move to the next exercise':'Rest is over','Time for your next set');saveActive()}
     if($('restClock')){$('restClock').textContent=left>=0?mmss(left):'+'+mmss(-left);
@@ -1224,11 +1355,16 @@ function tick(){
       const card=$('restCard'); if(card) card.classList.toggle('over',left<0);
       $('restHead').textContent=left>=0?(r.move?'Move to the next exercise':'Rest'):'Time to lift'}
   }
-  if(active.work&&$('workClock')){const c=curItem(), el=(now-active.work)/1000, one=c&&c.it.d.secs||0, tgt=one*(c&&c.x.side?2:1);
-    if(c&&c.x.side&&el>=one&&el<tgt&&!active.sideBeeped){active.sideBeeped=true;beep(660,150,1)}
-    if($('workSide')) $('workSide').textContent=c&&c.x.side&&el<tgt?(el<one?'First side':'Switch sides'):'';
-    $('workClock').textContent=el<tgt?mmss(tgt-el):'+'+mmss(el-tgt);
-    if(el>=tgt&&!active.workBeeped){active.workBeeped=true;if(!loudEl)beep(988,220,2);alarmNote('Time’s up',`${c?c.x.n+': ':''}hold done`)}}
+  // Hold timer: beeps and the lock-screen alert run even while you look at another exercise
+  if(active.work&&active.workPlan){const P=active.workPlan, c=curItem(active.workK), el=(now-active.work)/1000, ph=workPhase(P,el);
+    if(P.side&&el>=P.one&&!active.sideBeeped){active.sideBeeped=true;beep(660,150,1)}
+    if(P.side&&P.gap&&el>=P.one+P.gap&&!active.goBeeped){active.goBeeped=true;beep(880,150,2)}
+    const txt=ph.left>0?mmss(ph.left):'+'+mmss(-ph.left);
+    if($('workClock')) $('workClock').textContent=txt;
+    if($('workSide')) $('workSide').textContent=ph.lbl||(ph.over?'Time’s up':'');
+    if($('workBox')) $('workBox').classList.toggle('sw',!!ph.sw);
+    if($('miniClock')){$('miniClock').textContent=txt; $('miniLbl').textContent=(c?c.x.n+' · ':'')+(ph.lbl||(ph.over?'time’s up':'hold'))}
+    if(el>=P.total&&!active.workBeeped){active.workBeeped=true;if(!loudEl)beep(988,220,2);alarmNote('Time’s up',`${c?c.x.n+': ':''}hold done`)}}
 }
 setInterval(tick,250);
 
@@ -1244,6 +1380,7 @@ function render(){
   if(mode==='loading'||mode==='signin'||mode==='error'){m.innerHTML=viewGate();document.getElementById('drawerHost').innerHTML='';return}
   m.innerHTML=tab==='today'?viewToday():tab==='progress'?viewProgress():tab==='exercises'?viewExercises():tab==='mobility'?viewMobility():tab==='gear'?viewGear():viewSettings();
   renderDrawer(); tick(); wireChart();
+  const ins=m.querySelectorAll('input[data-draft]'); if(ins.length) ins[ins.length-1].setAttribute('enterkeyhint','done');
 }
 const opt=(arr,val)=>arr.map(([v,l])=>`<option value="${esc(v)}"${String(v)===String(val)?' selected':''}>${esc(l)}</option>`).join('');
 
@@ -1253,7 +1390,7 @@ function viewToday(){
   const p=state.profile, c=p.ctx, plan=getPlan();
   const sportOpts=[['all',p.sports.length?'All my sports':'No sports picked'],...p.sports.filter(s=>SPORTS[s]).map(s=>[s,SPORTS[s].n])];
   const sum=lastSummary&&!lastSummary.routine?`<section class="panel stack" style="border-color:var(--accent)"><div class="row" style="justify-content:space-between"><h3>Workout saved</h3><button class="btn sm ghost" data-act="dismissSum">Close</button></div>
-    <div class="stats">${[[lastSummary.mins+' min','Time'],[lastSummary.sets,'Sets'],[Math.round(toDisp(lastSummary.vol)).toLocaleString(),U()+' lifted'],[lastSummary.rest.n?`${lastSummary.rest.ok}/${lastSummary.rest.n}`:'–','Rests on time']].map(([b,s])=>`<div class="stat"><b>${b}</b><span>${s}</span></div>`).join('')}</div>
+    <div class="stats">${[[lastSummary.mins+' min','Time'],[lastSummary.sets,'Sets'],[Math.round(toDisp(lastSummary.vol)).toLocaleString(),U()+' lifted'],[lastSummary.focus||'–','Focus vs usual']].map(([b,s])=>`<div class="stat"><b>${b}</b><span>${s}</span></div>`).join('')}</div>
     ${lastSummary.prs.length?`<p><b>New bests:</b> ${esc(lastSummary.prs.join(', '))}</p>`:''}</section>`:'';
   const blocks=plan.blocks.map((b,bi)=>{
     const ss=b.items.length>1&&b.role!=='warm', letter=b.role==='warm'?'W':String.fromCharCode(65+bi-(plan.blocks[0].role==='warm'?1:0));
@@ -1290,16 +1427,17 @@ function viewRun(){
     <span style="margin-left:auto" class="row">${pendingDelete==='END'?`<button class="btn sm primary" data-act="endSave">Save &amp; finish</button><button class="btn sm danger" data-act="endDiscard">Discard</button><button class="btn sm ghost" data-act="endCancel">Keep going</button>`:`<button class="btn sm ghost" data-act="endAsk">End ${A.routine?'routine':'workout'}</button>`}</span></div>
     <div class="meter"><i style="width:${total?doneN/total*100:0}%"></i></div>`+nav;
   if(A.phase==='done'||!curItem()){
-    return `<div class="stack">${bar}<section class="runcard rest"><h2>${A.routine?'All done':'All sets done'}</h2><p class="muted">Nice work. Save it to ${A.routine?'keep it in your history':'update your progress'}.</p>
+    return `<div class="stack">${bar}<section class="runcard rest"><h2>${A.routine?'All done':'All sets done'}</h2>${A.lastK!=null?feelAsk(A.lastK):''}<p class="muted">Nice work. Save it to ${A.routine?'keep it in your history':'update your progress'}.</p>
       <button class="btn primary done-set" data-act="endSave">Save ${A.routine?'routine':'workout'}</button>${doneN?`<button class="btn sm ghost" data-act="undo">Undo last set</button>`:''}</section></div>`;
   }
   const c=curItem(), x=c.x, d=c.it.d, ss=c.b.items.length>1&&c.b.role!=='warm', label=c.b.label?(A.routine?A.tpl:c.b.label):`${ROLE_NAME[c.b.role]}${ss?' · superset '+exTag(c.st.b,c.st.i):''}`;
   const sg=suggest(x,d), setN=c.b.role==='warm'?'':`${c.b.label?'Round':'Set'} ${c.st.s+1} of ${d.sets}`;
-  const target=(d.secs?`${d.secs}s`:d.reps[0]===d.reps[1]?`${d.reps[0]} reps`:`${d.reps[0]}–${d.reps[1]} reps`)+sideTxt(x);
+  const target=(d.secs?`${(A.draft&&A.draft.t)||sg.t||d.secs}s`:d.reps[0]===d.reps[1]?`${d.reps[0]} reps`:`${d.reps[0]}–${d.reps[1]} reps`)+sideTxt(x);
   if(A.phase==='rest'&&A.rest){
     const nextTxt=x.t==='time'?`${A.draft&&A.draft.t||d.secs}s`:x.t==='bw'?`${A.draft&&A.draft.r||d.reps[0]} reps`:`${A.draft&&A.draft.w!=null?wtxt(A.draft.w)+' × ':''}${A.draft&&A.draft.r||d.reps[0]}`;
-    return `<div class="stack">${bar}<section class="runcard rest" id="restCard">
+    return `<div class="stack">${bar}${A.work?timerStrip():''}<section class="runcard rest${slideCls()}" id="restCard" data-swipe="1">
       <h3 id="restHead">Rest</h3><div class="clock" id="restClock">${mmss(A.rest.plan)}</div><div class="meter"><i id="restBar" style="width:0%"></i></div>
+      ${A.rest.from!=null?feelAsk(A.rest.from):''}
       <p class="focus-line">${esc(FOCUS_LINES[A.k%FOCUS_LINES.length])}</p>
       ${canNotify()&&Notification.permission==='default'&&state.profile.alertAsk!==false?`<div class="alert-ask small"><span>Locking your phone? Allow alerts and it buzzes when rest is over.</span>
         <span class="row"><button class="btn sm primary" data-act="alertOn">Allow alerts</button><button class="btn sm ghost" data-act="alertNo">Not now</button></span></div>`:''}
@@ -1311,28 +1449,46 @@ function viewRun(){
   }
   const dr=A.draft||{}, prev=loggedFor(c.it.ex);
   const stepper=(k,lbl,val,stp)=>`<div class="stepper"><label class="field" for="dr-${k}">${lbl}</label><div class="ctl"><button data-step="${k}" data-v="-${stp}" aria-label="Less">−</button>
-    <input type="number" inputmode="decimal" id="dr-${k}" data-draft="${k}" value="${val==null?'':val}"><button data-step="${k}" data-v="${stp}" aria-label="More">+</button></div></div>`;
+    <input type="number" inputmode="decimal" enterkeyhint="next" id="dr-${k}" data-draft="${k}" value="${val==null?'':val}"><button data-step="${k}" data-v="${stp}" aria-label="More">+</button></div></div>`;
   const wStep=U()==='lb'?5:(x.per?2:2.5);
   let inputs='';
   if(x.t==='wr') inputs=stepper('w',`Weight (${U()}${x.per?' per hand':''})`,toDisp(dr.w),wStep)+stepper('r','Reps',dr.r,1);
   else if(x.t==='bw') inputs=stepper('r','Reps',dr.r,1)+(c.b.role==='warm'||A.routine?'':stepper('w',`Added (${U()})`,toDisp(dr.w),wStep));
-  else inputs=stepper('t','Seconds',dr.t,5)+(x.std?stepper('w',`Weight (${U()}${x.per?' per hand':''})`,toDisp(dr.w),wStep):'')+
-    `<div class="stepper"><span class="field">Timer${x.side?' · <span id="workSide">both sides</span>':''}</span><div class="ctl">${A.work?`<b class="mono" style="font-size:28px" id="workClock"></b>`:`<button class="btn" style="width:auto;height:44px;padding:0 16px;font-size:15px" data-act="workStart">Start ${x.side?d.secs*2:d.secs}s</button>`}</div></div>`;
+  else{const mine=A.work&&A.workK===A.k, one=+dr.t||d.secs;
+    inputs=stepper('t',`Seconds${x.side?' each side':''}`,dr.t,5)+(x.std?stepper('w',`Weight (${U()}${x.per?' per hand':''})`,toDisp(dr.w),wStep):'')+
+    `<div class="stepper timer" id="workBox"><span class="field">Timer · <span id="workSide">${mine?'':x.side?`${one}s, ${state.profile.switchGap||0}s to switch, ${one}s`:'ready'}</span></span><div class="ctl">${mine?`<b class="mono" style="font-size:28px" id="workClock"></b><button class="btn" style="width:auto;height:44px;padding:0 16px" data-act="workStop">Stop</button>`:`<button class="btn" style="width:auto;height:44px;padding:0 16px;font-size:15px" data-act="workStart"${A.work?' disabled':''}>Start ${one}s${x.side?' each side':''}</button>`}</div></div>`+
+    (A.timed!=null?`<p class="small muted" style="flex-basis:100%">The timer measured ${A.timed}s${x.side?' each side':''}. Change the seconds if that’s off (setup time, a slip), then tap Done.</p>`:'')}
   const upcoming=[]; for(let j=A.k+1;j<A.steps.length&&upcoming.length<3;j++){if(!isOpen(j)) continue; const n=curItem(j).x.n; if(n!==x.n&&!upcoming.includes(n)) upcoming.push(n)}
-  return `<div class="stack">${bar}<section class="runcard">
+  return `<div class="stack">${bar}${timerStrip()}<section class="runcard${slideCls()}" data-swipe="1">
     <div class="row" style="justify-content:space-between"><span class="role ${c.b.role}">${esc(label)}</span><span class="small muted">${setN}</span></div>
     <div class="runhead"><span class="figbox">${figure(x)}</span><button class="big-name" data-open="${x.id}">${esc(x.n)}</button></div>
     <div class="target">Target: ${esc(target)}${x.per&&x.t==='wr'?' <span class="small muted">(weight per hand)</span>':''}</div>
+    ${c.b.role!=='warm'?lastTime(x):''}
     ${sg.note&&c.b.role!=='warm'?`<p class="small muted">${esc(sg.note)}</p>`:''}
     <div class="steppers">${inputs}</div>
+    ${usesBar(x)?`<p class="plates small" id="plates">${esc(platesFor(toDisp(dr.w)))}</p>`:''}
     ${c.b.role==='warm'?(prev.length?`<div class="setlog">${prev.map((l,i)=>`<span>${esc(setTxt(x,l))}</span>`).join('')}</div>`:''):runSets(c,x,sg)}
     <ul class="cues small">${x.c.map(q=>`<li>${esc(q)}</li>`).join('')}</ul>
     <button class="btn primary done-set" data-act="done">Done${c.b.role==='warm'?'':' set'}</button>
-    <div class="row"><button class="btn sm" data-act="swapRun">Swap exercise</button>${prev.length?'':`<button class="btn sm ghost" data-act="rmRun">Remove</button>`}<button class="btn sm ghost" data-act="skipEx">Skip exercise</button>${doneN?`<button class="btn sm ghost" data-act="undo">Undo last set</button>`:''}</div>
+    <div class="row"><button class="btn sm" data-open="${x.id}">History &amp; trend</button><button class="btn sm" data-act="swapRun">Swap exercise</button>${prev.length?'':`<button class="btn sm ghost" data-act="rmRun">Remove</button>`}<button class="btn sm ghost" data-act="skipEx">Skip exercise</button>${doneN?`<button class="btn sm ghost" data-act="undo">Undo last set</button>`:''}</div>
     ${upcoming.length?`<p class="upnext">Up next: ${esc(upcoming.join(' · '))}</p>`:''}
   </section></div>`;
 }
 
+// A rest or hold that keeps running while you look at another exercise
+function timerStrip(){
+  const A=active, other=A.work?A.workK!==A.k:A.rest&&(A.phase!=='rest');
+  if(!other) return '';
+  return `<button class="timerstrip" data-act="backToTimer"><span id="miniLbl">${A.work?'Hold':'Rest'}</span><b class="mono" id="miniClock"></b><span class="go">Back to timer ›</span></button>`;
+}
+// Asked during the rest after a set: how hard it felt. The next session uses it, and it shows next time as "last time felt…"
+function feelAsk(k){
+  const l=active.log[k]; if(!l) return '';
+  const c=curItem(k); if(!c||c.b.role==='warm') return '';
+  return `<div class="feel"><span class="small">How did that ${esc(c.x.n)} set feel?</span><div class="chips">${[1,2,3,4].map(v=>`<button class="chip" data-feel="${v}" data-fk="${k}" aria-pressed="${l.f===v}" title="${FEEL_HINT[v]}">${FEEL[v]}</button>`).join('')}</div>
+    <span class="small muted">${l.f?esc(FEEL_HINT[l.f]):'Easy means 3+ reps left, all-out means nothing left.'}</span></div>`;
+}
+let slideDir=0; const slideCls=()=>{const d=slideDir; slideDir=0; return d?(d>0?' slide-next':' slide-prev'):''};
 // Every set of the current exercise: done, now, skipped or still to do. Tap one to do it (or redo it) next.
 function runSets(c,x,sg){
   const A=active, e=exList().find(o=>o.b===c.st.b&&o.i===c.st.i), maxLogged=Math.max(0,...e.steps.filter(j=>A.log[j]).map(j=>A.steps[j].s+1));
@@ -1374,9 +1530,12 @@ function viewProgress(){
   const all=state.sessions, now=Date.now(), S=all.filter(s=>!s.routine), wk=S.filter(s=>now-new Date(s.ts).getTime()<7*DAY);
   const rwk=all.filter(s=>s.routine&&now-new Date(s.ts).getTime()<7*DAY), rmins=Math.round(rwk.reduce((t,s)=>t+(s.end?(new Date(s.end)-new Date(s.ts))/60000:0),0));
   const mins=wk.reduce((t,s)=>t+(s.end?(new Date(s.end)-new Date(s.ts))/60000:0),0);
-  const recent=S.slice(-8), rn=recent.reduce((t,s)=>t+(s.rest?s.rest.n:0),0), rok=recent.reduce((t,s)=>t+(s.rest?s.rest.ok:0),0);
-  const avgOver=rn?Math.round(recent.reduce((t,s)=>t+(s.rest?s.rest.over:0),0)/rn):0;
-  const stats=[[wk.length,'Workouts this week'],[Math.round(mins)+' min','Time this week'],[wk.reduce((t,s)=>t+s.entries.reduce((u,e)=>u+e.sets.length,0),0),'Sets this week'],[rn?Math.round(rok/rn*100)+'%':'–','Rests on time']];
+  // Trends per exercise over the last 12 weeks, most recently done first
+  const lately=[...new Set(all.slice().reverse().filter(s=>now-new Date(s.ts).getTime()<84*DAY).flatMap(s=>s.entries.map(e=>e.ex)))]
+    .map(id=>BYID[id]).filter(x=>x&&x.p!=='mob'&&(x.t!=='time'||x.base)).map(x=>({x,T:trendOf(x)})).filter(o=>o.T&&o.T.n>=2);
+  const judged=lately.filter(o=>o.T.n>=3), climbing=judged.filter(o=>o.T.kind==='up').length;
+  const stats=[[wk.length,'Workouts this week'],[Math.round(mins)+' min','Time this week'],[wk.reduce((t,s)=>t+s.entries.reduce((u,e)=>u+e.sets.length,0),0),'Sets this week'],[judged.length?`${climbing} of ${judged.length}`:'–','Lifts climbing']];
+  const trows=lately.slice(0,12).map(({x,T})=>`<button class="trow" data-trendex="${x.id}"><span class="nm">${esc(x.n)}</span>${spark(T.pts)}<span class="pill ${TREND_PILL[T.kind]}">${esc(trendTxt(T))}</span></button>`).join('');
   const ps=patternScores();
   const pbars=SCORED.map(p=>{const o=ps[p], lv=o.ex?levelOf(o.score):-1, pct=Math.min(100,o.score/1.2*100);
     return `<div class="barrow"><span class="lbl">${esc(PAT[p])}</span><div class="meter"><i class="l${Math.max(0,lv)}" style="width:${o.ex?Math.max(3,pct):0}%"></i></div>
@@ -1391,56 +1550,85 @@ function viewProgress(){
   if(!chartEx||!done.includes(chartEx)) chartEx=done.find(id=>BYID[id].std)||done[0]||null;
   const hist=[...all].reverse().slice(0,30).map(s=>{
     const mins=s.end?Math.round((new Date(s.end)-new Date(s.ts))/60000):null;
-    return `<div class="entry"><div><b>${esc(s.tpl||FOCUS_NAME[s.focus]||'Workout')}</b> <span class="meta">${fmtDate(s.ts)}${mins!=null?' · '+mins+' min':''}${s.rest&&s.rest.n?` · rests on time ${s.rest.ok}/${s.rest.n}`:''}</span>
+    return `<div class="entry"><div><b>${esc(s.tpl||FOCUS_NAME[s.focus]||'Workout')}</b> <span class="meta">${fmtDate(s.ts)}${mins!=null?' · '+mins+' min':''}</span>
       <div class="small muted">${s.entries.map(e=>{const x=BYID[e.ex];return x?`${esc(x.n)} ${e.sets.map(st=>esc(setTxt(x,st))).join(', ')}`:''}).filter(Boolean).join(' · ')}</div></div>
       <div>${pendingDelete===s.id?`<button class="btn sm danger" data-del="${s.id}">Delete</button> <button class="btn sm ghost" data-delcancel="1">Keep</button>`:`<button class="btn sm ghost" data-delask="${s.id}" aria-label="Delete workout">✕</button>`}</div></div>`}).join('');
   return `<div class="stack">
     <h2>Progress</h2>
     <section class="panel"><div class="stats">${stats.map(([b,s])=>`<div class="stat"><b>${b}</b><span>${s}</span></div>`).join('')}</div>
       <p class="small muted" style="margin-top:10px">${rwk.length?`Warm-up &amp; mobility this week: ${rwk.length} routine${rwk.length>1?'s':''}, ${rmins} min.`:'No warm-up or mobility routines this week yet.'} <button class="btn sm ghost" data-tab="mobility">Mobility</button></p>
-      ${rn?`<p class="small muted" style="margin-top:10px">Over your last ${recent.length} workouts you went over the rest timer by ${avgOver}s per rest on average. On time means within 15 seconds.</p>`:''}</section>
+</section>
+    <section class="panel stack"><div><h3>Your lifts lately</h3><p class="small muted">Each exercise over its last sessions. Flat for 3 sessions or dipping means the coach changes the plan: a slower tempo, then a lighter session to get unstuck. Tap one for its chart.</p></div>
+      ${trows?`<div class="trows">${trows}</div>`:'<p class="small muted">Do an exercise twice and its trend shows here.</p>'}</section>
+    ${focusPanel(S)}
     <section class="panel stack"><div><h3>Movement strength</h3><p class="small muted">Your best set in each movement over the last 4 months, compared with bodyweight. Strong means roughly a 1.5× bodyweight squat, 2× deadlift, 1.25× bench, or 10+ strict pull-ups.</p></div>
       <div class="bars">${pbars}</div></section>
     <section class="panel stack"><div><h3>Sets per muscle this week</h3><p class="small muted">The line is a weekly target: 12 sets for muscles you starred under Gear &amp; goals, 8 for the rest.</p></div><div class="bars">${mbars}</div></section>
-    <section class="panel stack"><div class="row" style="justify-content:space-between"><h3>Exercise trend</h3>
+    <section class="panel stack" id="trendChart"><div class="row" style="justify-content:space-between"><h3>Exercise trend</h3>
       ${done.length?`<select data-chart="1">${opt(done.map(id=>[id,BYID[id].n]),chartEx)}</select>`:''}</div>
       ${chartEx?chartHtml(chartEx):'<p class="empty">Log a workout to see trends.</p>'}</section>
     <section class="panel"><h3>History</h3>${hist||'<p class="empty">No workouts yet.</p>'}</section>
   </div>`;
 }
-function chartHtml(id){
+// Focus between sets as a trend: share of rests started on time per workout, and minutes per set, recent vs before
+function focusPanel(S){
+  const R=S.filter(s=>s.rest&&s.rest.n).slice(-12);
+  if(R.length<2) return `<section class="panel stack"><h3>Focus between sets</h3><p class="small muted">After a couple of workouts this shows whether you’re getting back to the next set on time more often.</p></section>`;
+  const pct=s=>s.rest.ok/s.rest.n*100, avg=a=>a.reduce((t,v)=>t+v,0)/a.length, k=Math.min(4,Math.floor(R.length/2));
+  const now4=avg(R.slice(-k).map(pct)), was4=avg(R.slice(-2*k,-k).map(pct)), dif=Math.round(now4-was4);
+  const head=Math.abs(dif)<5?`Steady: about ${Math.round(now4)}% of rests on time lately.`:dif>0?`Tighter: ${Math.round(now4)}% of rests on time in your last ${k} workouts, up from ${Math.round(was4)}%.`:`Looser: ${Math.round(now4)}% of rests on time in your last ${k} workouts, down from ${Math.round(was4)}%. Phone down, timer up.`;
+  const mps=s=>{const n=s.entries.reduce((t,e)=>t+e.sets.length,0); return s.end&&n?(new Date(s.end)-new Date(s.ts))/60000/n:null};
+  const M=S.filter(s=>mps(s)!=null).slice(-2*k), mNow=M.length>=2*k?avg(M.slice(-k).map(mps)):null, mWas=mNow!=null?avg(M.slice(0,k).map(mps)):null;
+  const pace=mNow==null?'':Math.abs(mNow-mWas)<.15?` Pace is steady at ${mNow.toFixed(1)} min per set.`:mNow<mWas?` You’re also quicker: ${mNow.toFixed(1)} min per set, down from ${mWas.toFixed(1)}.`:` Pace slowed to ${mNow.toFixed(1)} min per set, from ${mWas.toFixed(1)}.`;
+  const pts=R.map(s=>({t:new Date(s.ts).getTime(),v:Math.round(pct(s)),lbl:`${fmtDate(s.ts)} · ${Math.round(pct(s))}% on time`,sub:`${s.rest.ok} of ${s.rest.n} rests`}));
+  return `<section class="panel stack"><div><h3>Focus between sets</h3><p class="small">${esc(head+pace)}</p><p class="small muted">Share of rests where you started the next set within 15 seconds of the timer, per workout.</p></div>
+    ${lineChart('focus',pts,{lo:0,hi:100,fmt:v=>v+'%',aria:'Rests on time per workout'})}</section>`;
+}
+function chartHtml(id,W,key='ex'){
   const x=BYID[id], h=exHistory(id); if(!h.length) return '';
   const m=metric(x,h[0].best), conv=v=>m.u==='kg'?toDisp(v):Math.round(v), unit=m.u==='kg'?U():m.u;
-  const pts=h.map(o=>({t:new Date(o.ts).getTime(),v:conv(o.v),best:o.best}));
-  const W=Math.max(300,Math.min(900,(document.getElementById('main').clientWidth||640)-66)),H=Math.round(Math.min(260,Math.max(180,W*.4))),L=44,R=12,T=14,B=28;
-  chartW=W;
-  const t0=pts[0].t,t1=pts[pts.length-1].t||t0+1, vs=pts.map(p=>p.v), lo0=Math.min(...vs), hi0=Math.max(...vs);
-  const pad=(hi0-lo0)*.15||Math.max(1,hi0*.1), lo=Math.max(0,Math.floor(lo0-pad)), hi=Math.ceil(hi0+pad);
+  const best=h.reduce((a,b)=>b.v>a.v?b:a), T=trendOf(x,h);
+  const pts=h.map(o=>({t:new Date(o.ts).getTime(),v:conv(o.v),lbl:`${fmtDate(o.ts)} · ${conv(o.v)} ${unit}`,sub:setTxt(x,o.best)+(o.feel?' · felt '+FEEL[o.feel].toLowerCase():'')+(o.dl?' · lighter session':'')}));
+  return `<p class="small muted">${esc(m.lbl)} per workout. Best: <b>${conv(best.v)} ${unit}</b> (${esc(setTxt(x,best.best))}, ${fmtDate(best.ts)}).${T&&T.kind!=='new'?` <span class="pill ${TREND_PILL[T.kind]}">${esc(trendTxt(T))}</span>`:''}</p>
+  ${lineChart(key,pts,{W,aria:`${x.n} ${m.lbl} over time`})}`;
+}
+// One-series line chart with a hover crosshair and tooltip. pts: [{t, v, lbl, sub}]; o: {W, aria, lo, hi, fmt}
+const CHARTS={};
+function lineChart(key,pts,o={}){
+  if(!pts.length) return '';
+  const W=Math.max(260,Math.min(900,o.W||(document.getElementById('main').clientWidth||640)-66)),H=Math.round(Math.min(240,Math.max(160,W*.4))),L=44,R=12,T=14,B=28;
+  const t0=pts[0].t,t1=pts[pts.length-1].t||t0+1, vs=pts.map(p=>p.v), lo0=o.lo!=null?o.lo:Math.min(...vs), hi0=o.hi!=null?o.hi:Math.max(...vs);
+  const pad=o.lo!=null?0:(hi0-lo0)*.15||Math.max(1,hi0*.1), lo=Math.max(0,Math.floor(lo0-pad)), hi=Math.ceil(hi0+pad), fmt=o.fmt||(v=>v);
   const X=t=>pts.length===1?L+(W-L-R)/2:L+(t-t0)/(t1-t0||1)*(W-L-R), Y=v=>T+(1-(v-lo)/(hi-lo||1))*(H-T-B);
   const ticks=[0,.5,1].map(f=>Math.round(lo+(hi-lo)*f));
-  const best=h.reduce((a,b)=>b.v>a.v?b:a);
-  chartPts=pts.map(p=>({x:X(p.t),y:Y(p.v),lbl:`${fmtDate(p.t)} · ${p.v} ${unit}`,sub:setTxt(x,p.best)}));
-  return `<p class="small muted">${esc(m.lbl)} per workout. Best: <b>${conv(best.v)} ${unit}</b> (${esc(setTxt(x,best.best))}, ${fmtDate(best.ts)}).</p>
-  <div class="chart" id="chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(x.n)} ${esc(m.lbl)} over time">
-    ${ticks.map(v=>`<line class="grid" x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}"/><text class="axis" x="${L-6}" y="${Y(v)+4}" text-anchor="end">${v}</text>`).join('')}
+  CHARTS[key]={W,pts:pts.map(p=>({x:X(p.t),y:Y(p.v),lbl:p.lbl,sub:p.sub||''}))};
+  return `<div class="chart" data-ck="${key}"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(o.aria||'')}">
+    ${ticks.map(v=>`<line class="grid" x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}"/><text class="axis" x="${L-6}" y="${Y(v)+4}" text-anchor="end">${fmt(v)}</text>`).join('')}
     <text class="axis" x="${L}" y="${H-6}">${fmtDate(t0)}</text>${pts.length>1?`<text class="axis" x="${W-R}" y="${H-6}" text-anchor="end">${fmtDate(t1)}</text>`:''}
     ${pts.length>1?`<polyline class="line" points="${pts.map(p=>X(p.t)+','+Y(p.v)).join(' ')}"/>`:''}
     ${pts.map(p=>`<circle class="dot" cx="${X(p.t)}" cy="${Y(p.v)}" r="5"/>`).join('')}
-    <line class="cross" id="cross" y1="${T}" y2="${H-B}" x1="0" x2="0" visibility="hidden"/>
-    <rect x="${L}" y="0" width="${W-L-R}" height="${H}" fill="transparent" id="chartHit"/>
-  </svg><div class="tip" id="tip" hidden></div></div>`;
+    <line class="cross" y1="${T}" y2="${H-B}" x1="0" x2="0" visibility="hidden"/>
+    <rect class="hit" x="${L-10}" y="0" width="${W-L-R+20}" height="${H}" fill="transparent"/>
+  </svg><div class="tip" hidden></div></div>`;
 }
-let chartPts=[], chartW=600;
 function wireChart(){
-  const hit=document.getElementById('chartHit'); if(!hit) return;
-  const svg=hit.ownerSVGElement, tip=document.getElementById('tip'), cross=document.getElementById('cross'), box=document.getElementById('chart');
-  const move=e=>{const r=svg.getBoundingClientRect(), k=chartW/r.width, mx=(e.clientX-r.left)*k;
-    let best=chartPts[0]; chartPts.forEach(p=>{if(Math.abs(p.x-mx)<Math.abs(best.x-mx))best=p});
-    cross.setAttribute('x1',best.x);cross.setAttribute('x2',best.x);cross.setAttribute('visibility','visible');
-    tip.hidden=false; tip.innerHTML=`<b>${esc(best.lbl)}</b><br>${esc(best.sub)}`;
-    tip.style.left=Math.min(Math.max(best.x/k,70),r.width-70)+'px'; tip.style.top=(best.y/k)+'px'};
-  hit.addEventListener('pointermove',move); hit.addEventListener('pointerdown',move);
-  hit.addEventListener('pointerleave',()=>{tip.hidden=true;cross.setAttribute('visibility','hidden')});
+  document.querySelectorAll('.chart[data-ck]').forEach(box=>{
+    const C=CHARTS[box.dataset.ck]; if(!C||box.dataset.wired) return; box.dataset.wired=1;
+    const svg=box.querySelector('svg'), hit=box.querySelector('.hit'), tip=box.querySelector('.tip'), cross=box.querySelector('.cross');
+    const move=e=>{const r=svg.getBoundingClientRect(), k=C.W/r.width, mx=(e.clientX-r.left)*k;
+      let best=C.pts[0]; C.pts.forEach(p=>{if(Math.abs(p.x-mx)<Math.abs(best.x-mx))best=p});
+      cross.setAttribute('x1',best.x);cross.setAttribute('x2',best.x);cross.setAttribute('visibility','visible');
+      tip.hidden=false; tip.innerHTML=`<b>${esc(best.lbl)}</b>${best.sub?'<br>'+esc(best.sub):''}`;
+      tip.style.left=Math.min(Math.max(best.x/k,70),r.width-70)+'px'; tip.style.top=(best.y/k)+'px'};
+    hit.addEventListener('pointermove',move); hit.addEventListener('pointerdown',move);
+    hit.addEventListener('pointerleave',()=>{tip.hidden=true;cross.setAttribute('visibility','hidden')});
+  });
+}
+// Small trend line for a list row
+function spark(vs){
+  if(vs.length<2) return '<svg class="spark" viewBox="0 0 80 24" aria-hidden="true"></svg>';
+  const lo=Math.min(...vs), hi=Math.max(...vs), X=i=>2+i/(vs.length-1)*76, Y=v=>21-(hi>lo?(v-lo)/(hi-lo):.5)*18;
+  return `<svg class="spark" viewBox="0 0 80 24" aria-hidden="true"><polyline points="${vs.map((v,i)=>X(i)+','+Y(v)).join(' ')}"/><circle cx="${X(vs.length-1)}" cy="${Y(vs[vs.length-1])}" r="2.6"/></svg>`;
 }
 
 /* ----- Exercises ----- */
@@ -1505,11 +1693,14 @@ function viewSettings(){
       <div class="ctx">${sel('main','Main lifts')}${sel('acc','Accessories')}${sel('ss','Between superset rounds')}${sel('power','Power & jumps')}${sel('core','Core & small muscles')}</div>
       <div class="row"><button class="chip" data-act="sound" aria-pressed="${state.profile.sound}">Sound &amp; vibration ${state.profile.sound?'on':'off'}</button></div>
       <p class="small muted">The timer beeps 10 seconds before the end and again at zero, then counts how far over you go.</p>
+      <label class="field" style="max-width:240px">Switch-over between sides<select data-switchgap="1">${opt([0,3,5,8,10,15].map(v=>[v,v?v+' seconds':'None']),state.profile.switchGap)}</select></label>
+      <p class="small muted">For holds done on each side, like side planks: the timer runs the first side, gives you this long to switch, then runs the second side.</p>
       ${canNotify()?`<div class="row"><button class="chip" data-act="alertOn" aria-pressed="${alertsOn()}"${Notification.permission==='default'?'':' disabled'}>${Notification.permission==='granted'?'Lock-screen alerts on':Notification.permission==='denied'?'Alerts blocked in browser settings':'Turn on lock-screen alerts'}</button></div>`:''}
       ${state.profile.sound?`<div class="row"><button class="chip" data-act="loud" aria-pressed="${!!state.profile.loud}">Loud alarm when locked ${state.profile.loud?'on':'off'}</button></div>
       <p class="small muted">Plays the alarm through your phone's media volume even with the screen locked. It pauses your music while a timer runs.</p>`:''}
       <p class="small muted">While a workout runs, the app keeps your screen on, so the beep is most reliable with the app open. If you lock the phone or switch apps, it sends a notification when rest or a hold is over instead, and repeats it every 20 seconds for a minute until you come back. Android sets how a notification buzzes and sounds, under Settings › Apps › Chrome › Notifications. That works best on Android with the app installed to your home screen. On iPhone, alerts only work for the installed app and can come late. If your phone stops the app to save battery, no alert comes, so don't leave it for long.</p>
     </section>
+    ${platesPanel()}
     <section class="panel stack"><h3>Google Drive</h3>${drivePanel()}</section>
     <section class="panel stack"><h3>Import from Fitbod</h3>
       <p class="small">Bring in your Fitbod history so progress charts and weight suggestions start from what you've already done. In Fitbod, go to Log, then the settings icon, and choose <b>Export workout data</b>. Then pick the CSV file here.</p>
@@ -1524,6 +1715,14 @@ function viewSettings(){
   </div>`;
 }
 
+function platesPanel(){
+  const P=state.profile.plates[U()], all=U()==='lb'?[55,45,35,25,10,5,2.5,1.25]:[25,20,15,10,5,2.5,2,1.25,1,0.5];
+  return `<section class="panel stack"><h3>Barbell plates</h3>
+    <p class="small">During barbell lifts the workout shows which plates to put on each side. Tell it your bar and the plates your gym has (in ${U()}).</p>
+    <label class="field" style="max-width:180px">Bar (${U()})<input type="number" inputmode="decimal" data-platebar="1" value="${esc(P.bar)}"></label>
+    <div class="chips">${all.map(v=>`<button class="chip" data-plate="${v}" aria-pressed="${P.list.map(Number).includes(v)}">${v}</button>`).join('')}</div>
+  </section>`;
+}
 /* ----- Drawer: exercise detail or new exercise ----- */
 // An open drawer gets its own browser history entry, so the phone's back button closes it instead of leaving the app
 let drawerInHistory=false;
@@ -1610,7 +1809,7 @@ function renderDrawer(){
     ${x.c.length?`<div><h3>Cues</h3><ul>${x.c.map(q=>`<li>${esc(q)}</li>`).join('')}</ul></div>`:''}
     <div><h3>Equipment</h3><p class="small">${esc(eqNeed(x))}${avail(x)?'':' <span style="color:var(--danger)">· not in your list</span>'}</p></div>
     ${x.q.length?`<div><h3>Builds</h3><p class="small">${x.q.map(q=>QUAL[q]).join(', ')}</p></div>`:''}
-    <div><h3>Your history</h3>${h.length?`<div>${h.slice(-6).reverse().map(o=>`<div class="entry"><span>${fmtDate(o.ts)}</span><span class="mono small">${o.sets.map(s=>esc(setTxt(x,s))).join(', ')}</span></div>`).join('')}</div>`:'<p class="small muted">Not done yet.</p>'}</div>
+    <div class="stack" style="gap:8px"><h3>Your history</h3>${h.length?`${chartHtml(x.id,Math.min(404,innerWidth-36),'drawer')}<div>${h.slice(-6).reverse().map(o=>`<div class="entry"><span>${fmtDate(o.ts)}${o.feel?` <span class="pill ${FEEL_PILL[o.feel]}">${esc(FEEL[o.feel])}</span>`:''}${o.dl?' <span class="pill">Lighter</span>':''}</span><span class="mono small">${o.sets.map(s=>esc(setTxt(x,s))).join(', ')}</span></div>`).join('')}</div>`:'<p class="small muted">Not done yet.</p>'}</div>
     ${alts.length?`<div><h3>Same movement</h3><div class="chips" style="margin-top:6px">${alts.slice(0,8).map(y=>`<button class="chip" data-open="${y.id}">${esc(y.n)}</button>`).join('')}</div></div>`:''}
     ${x.custom?`<div class="row"><button class="btn sm ghost danger" data-rmex="${x.id}">Remove this exercise</button></div>`:''}
   </aside>`;
@@ -1621,13 +1820,13 @@ function renderDrawer(){
 // Column names are matched loosely so small format changes still import.
 const FITBOD_NAMES={
   'back squat':'bsquat','barbell squat':'bsquat','barbell back squat':'bsquat','squat':'bsquat','front squat':'fsquat','barbell front squat':'fsquat',
-  'goblet squat':'goblet','dumbbell goblet squat':'goblet','kettlebell goblet squat':'goblet','leg press':'legpress','machine leg press':'legpress',
+  'goblet squat':'goblet','dumbbell front squat':'dbfsquat','dumbbell goblet squat':'goblet','kettlebell goblet squat':'goblet','leg press':'legpress','machine leg press':'legpress',
   'deadlift':'dl','barbell deadlift':'dl','conventional deadlift':'dl','trap bar deadlift':'tbdl','hex bar deadlift':'tbdl',
-  'romanian deadlift':'rdl','barbell romanian deadlift':'rdl','dumbbell romanian deadlift':'rdl','stiff legged deadlift':'rdl',
-  'hip thrust':'hipthrust','barbell hip thrust':'hipthrust','dumbbell hip thrust':'hipthrust','back extension':'backext','hyperextension':'backext',
+  'romanian deadlift':'rdl','barbell romanian deadlift':'rdl','dumbbell romanian deadlift':'dbrdl','dumbbell rdl':'dbrdl','stiff legged deadlift':'rdl',
+  'hip thrust':'hipthrust','barbell hip thrust':'hipthrust','dumbbell hip thrust':'dbhipthrust','back extension':'backext','hyperextension':'backext',
   'nordic hamstring curl':'nordic','nordic curl':'nordic','single leg romanian deadlift':'slrdl','dumbbell single leg romanian deadlift':'slrdl',
   'bulgarian split squat':'bss','dumbbell bulgarian split squat':'bss','split squat':'bss','dumbbell split squat':'bss',
-  'lunge':'lunge','walking lunge':'lunge','dumbbell lunge':'lunge','dumbbell walking lunge':'lunge','barbell lunge':'lunge','reverse lunge':'lunge','dumbbell reverse lunge':'lunge',
+  'lunge':'lunge','walking lunge':'lunge','dumbbell lunge':'dbrevlunge','dumbbell walking lunge':'lunge','barbell lunge':'lunge','reverse lunge':'lunge','dumbbell reverse lunge':'dbrevlunge',
   'step up':'stepup','dumbbell step up':'stepup','box step up':'stepup','lateral lunge':'latlunge','side lunge':'latlunge','cossack squat':'cossack',
   'skater squat':'skatersq','pistol squat':'pistol',
   'bench press':'bench','barbell bench press':'bench','dumbbell bench press':'dbbench','incline dumbbell bench press':'incline','incline dumbbell press':'incline',
@@ -1636,7 +1835,7 @@ const FITBOD_NAMES={
   'overhead press':'ohp','barbell shoulder press':'ohp','military press':'ohp','standing barbell shoulder press':'ohp',
   'dumbbell shoulder press':'dbohp','seated dumbbell shoulder press':'dbohp','arnold press':'dbohp','landmine press':'lmpress',
   'lateral raise':'latraise','dumbbell lateral raise':'latraise','cable lateral raise':'latraise','side lateral raise':'latraise',
-  'barbell row':'row','bent over barbell row':'row','bent over row':'row','dumbbell row':'dbrow','single arm dumbbell row':'dbrow','one arm dumbbell row':'dbrow',
+  'barbell row':'row','bent over barbell row':'row','bent over row':'row','dumbbell row':'dbrow','dumbbell bent over row':'dbbentrow','bent over dumbbell row':'dbbentrow','single arm dumbbell row':'dbrow','one arm dumbbell row':'dbrow',
   'seated cable row':'cablerow','cable row':'cablerow','inverted row':'invrow','trx row':'invrow','body row':'invrow',
   'pull up':'pullup','pullup':'pullup','wide grip pull up':'pullup','chin up':'chinup','chinup':'chinup','lat pulldown':'pulldown','cable lat pulldown':'pulldown',
   'face pull':'facepull','cable face pull':'facepull','band pull apart':'pullapart',
@@ -1810,6 +2009,7 @@ document.addEventListener('click',async e=>{
   if(d.rstart){startRoutine(d.rstart); return}
   if(d.goex){const [b,i]=d.goex.split(':').map(Number); goExercise(b,i); return}
   if(d.goset&&active){goSet(+d.goset); return}
+  if(d.feel&&active){const l=active.log[+d.fk]; if(l){l.f=l.f===+d.feel?undefined:+d.feel; saveActive(); render()} return}
   if(d.psets&&planCache){const b=planCache.blocks[+d.psets]; if(b&&setCount(planCache,+d.psets,b.items[0].d.sets+(+d.v))){persist();render()} return}
   if(d.rsets&&active){const bi=+d.rsets, b=active.plan.blocks[bi], n=b.items[0].d.sets+(+d.v),
     logged=Math.max(0,...active.steps.filter((st,j)=>st.b===bi&&active.log[j]).map(st=>st.s+1)); if(n<logged) return;
@@ -1819,6 +2019,7 @@ document.addEventListener('click',async e=>{
   if(d.tpluse){useTemplate(d.tpluse); selected=null; render(); window.scrollTo(0,0); return}
   if(d.tpldel){const p2=state.profile; p2.templates=(p2.templates||[]).filter(t=>t.id!==d.tpldel); pendingDelete=null; touchProfile(); render(); return}
   if(d.pick&&picker){applyPick(d.pick); return}
+  if(d.trendex){chartEx=d.trendex; render(); const el=document.getElementById('trendChart'); if(el) el.scrollIntoView({block:'start',behavior:'smooth'}); return}
   if(d.pickall&&picker){picker.all=d.pickall==='1'; render(); return}
   if(d.fav){toggle(p.favorites,d.fav);touchProfile();render();return}
   if(d.eq){toggle(p.equipment,d.eq);touchProfile();render();return}
@@ -1826,9 +2027,10 @@ document.addEventListener('click',async e=>{
   if(d.sport){toggle(p.sports,d.sport);if(!p.sports.includes(p.ctx.sport))p.ctx.sport='all';touchProfile();render();return}
   if(d.mus){toggle(p.muscles,d.mus);touchProfile();render();return}
   if(d.units){p.units=d.units;saveProfile();render();return}
+  if(d.plate){const P=p.plates[U()], v=+d.plate; P.list=P.list.map(Number); toggle(P.list,v); saveProfile(); render(); return}
   if(d.exshow){exShow=d.exshow;render();return}
   if(d.step&&active&&active.draft){const k=d.step, cur=k==='w'?toDisp(active.draft.w)||0:+(active.draft[k]||0), v=Math.max(0,Math.round((cur+(+d.v))*2)/2);
-    active.draft[k]=k==='w'?fromDisp(v):v; saveActive(); const el=document.getElementById('dr-'+k); if(el) el.value=k==='w'?toDisp(active.draft.w):v; return}
+    active.draft[k]=k==='w'?fromDisp(v):v; saveActive(); const el=document.getElementById('dr-'+k); if(el) el.value=k==='w'?toDisp(active.draft.w):v; showPlates(); return}
   if(d.delask){pendingDelete=d.delask;render();return}
   if(d.delcancel){pendingDelete=null;render();return}
   if(d.del){state.sessions=state.sessions.filter(s=>s.id!==d.del);state.deleted.push(d.del);pendingDelete=null;persist();toast('Workout deleted');render();return}
@@ -1857,7 +2059,9 @@ document.addEventListener('click',async e=>{
     case 'tplSave': {const n=(document.getElementById('tplName').value||'').trim(); if(!n){toast('Give the template a name');return} saveTemplate(n); selected=null; toast(`Saved template “${n}”`); render(); return}
     case 'addEx': openPick({mode:'add',where:'plan'}); return;
     case 'addExRun': openPick({mode:'add',where:'run'}); return;
-    case 'workStart': audio(); active.work=Date.now(); active.workBeeped=false; active.sideBeeped=false; render(); return;
+    case 'workStart': audio(); if(active.work) return; active.workPlan=workPlan(); active.tgt=active.tgt||{}; active.tgt[curItem().it.ex]=active.workPlan.one; active.work=Date.now(); active.workK=active.k; active.workDraft=active.draft; active.timed=null; active.workBeeped=false; active.sideBeeped=false; active.goBeeped=false; saveActive(); render(); return;
+    case 'workStop': stopWork(); saveActive(); render(); return;
+    case 'backToTimer': backToTimer(); return;
     case 'endAsk': pendingDelete='END'; render(); return;
     case 'endCancel': pendingDelete=null; render(); return;
     case 'endSave': finishWorkout(true); return;
@@ -1883,16 +2087,41 @@ document.addEventListener('click',async e=>{
   }
 });
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&selected){selected=null;render()}});
+function showPlates(){const el=document.getElementById('plates'); if(el&&active&&active.draft) el.textContent=platesFor(toDisp(active.draft.w))}
+// Phone numpad: Enter moves to the next box, and after the last one brings the Done button into view (the keyboard may cover half the screen)
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Enter'||!e.target.matches||!e.target.matches('[data-draft]')) return;
+  e.preventDefault();
+  const all=[...document.querySelectorAll('input[data-draft]')], i=all.indexOf(e.target);
+  if(i>=0&&i<all.length-1){all[i+1].focus(); all[i+1].select&&all[i+1].select(); return}
+  e.target.blur(); const done=document.querySelector('[data-act="done"]');
+  if(done){done.scrollIntoView({block:'center',behavior:'smooth'}); done.focus({preventScroll:true})}
+});
+// Swipe left or right on the workout card to page between exercises
+let swipe=null;
+document.addEventListener('touchstart',e=>{
+  const card=e.target.closest&&e.target.closest('[data-swipe]');
+  swipe=card&&active&&!selected&&e.touches.length===1&&!e.target.closest('input,textarea,select,[data-grip]')?{x:e.touches[0].clientX,y:e.touches[0].clientY,t:Date.now()}:null;
+},{passive:true});
+document.addEventListener('touchend',e=>{
+  const S=swipe; swipe=null; if(!S||!active) return; const t=e.changedTouches[0], dx=t.clientX-S.x, dy=t.clientY-S.y;
+  if(Math.abs(dx)<60||Math.abs(dx)<Math.abs(dy)*1.5||Date.now()-S.t>800) return;
+  const L=exList(), st=active.steps[active.k], i=st?L.findIndex(o=>o.b===st.b&&o.i===st.i):-1, dir=dx<0?1:-1;
+  if(i<0||!L[i+dir]) return;
+  slideDir=dir; stepExercise(dir);
+},{passive:true});
 document.addEventListener('input',e=>{
   const t=e.target, d=t.dataset;
   if(d.pickq&&picker){picker.q=t.value; const el=document.getElementById('picklist'); if(el) el.innerHTML=pickRows(); return}
-  if(d.draft&&active&&active.draft){const v=t.value===''?null:+t.value; active.draft[d.draft]=d.draft==='w'?fromDisp(v):v; saveActive(); return}
+  if(d.draft&&active&&active.draft){const v=t.value===''?null:+t.value; active.draft[d.draft]=d.draft==='w'?fromDisp(v):v; saveActive(); showPlates(); return}
+  if(d.platebar){const P=state.profile.plates[U()], v=+t.value; if(v>=0&&v<100){P.bar=v; saveProfile()} return}
   if(d.balance){const a=+t.value; document.getElementById('mixTxt').textContent=a<=35?'Plans lean toward muscle and shape.':a>=65?'Plans lean toward performance and sport.':'A mix of strength, power and physique work.'}
 });
 document.addEventListener('change',async e=>{
   const t=e.target, d=t.dataset, p=state.profile;
   if(d.ctx){p.ctx[d.ctx]=d.ctx==='minutes'?+t.value:t.value;saveProfile();render();return}
   if(d.rest){p.rest[d.rest]=+t.value;saveProfile();return}
+  if(d.switchgap){p.switchGap=+t.value;saveProfile();return}
   if(d.balance){p.balance=+t.value;touchProfile();render();return}
   if(d.bw){const v=fromDisp(t.value); if(v&&v>20&&v<400){p.bw=v;saveProfile()} else toast('Enter your bodyweight');return}
   if(d.exfilter){exFilter=t.value;render();return}
